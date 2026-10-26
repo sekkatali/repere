@@ -463,7 +463,13 @@ form.addEventListener('submit',async e=>{
   e.preventDefault();const f=new FormData(form);const t=document.getElementById('thanks');
   const btn=document.querySelector('button[form=scanform]');btn.disabled=true;
   const token=crypto.randomUUID();
-  const {error}=await sb.from('scan_requests').insert({token,restaurant:String(f.get('resto')).trim(),city:String(f.get('ville')).trim(),email:String(f.get('email')).trim().toLowerCase()});
+  const row={restaurant:String(f.get('resto')).trim(),city:String(f.get('ville')).trim(),email:String(f.get('email')).trim().toLowerCase()};
+  let {error}=await sb.from('scan_requests').insert({token,...row});
+  if(error&&/token/.test(error.message||'')){ // base pas encore à jour : on enregistre quand même la demande
+    ({error}=await sb.from('scan_requests').insert(row));
+    btn.disabled=false;
+    if(!error){t.textContent=`C'est noté pour ${row.restaurant}. Votre scan arrive à ${row.email} dans la journée.`;t.hidden=false;form.hidden=true;btn.hidden=true;return;}
+  }
   btn.disabled=false;
   if(error){t.textContent="La demande n'a pas pu partir. Réessayez dans un instant.";t.hidden=false;return;}
   location.href='/scan.html?t='+token;
