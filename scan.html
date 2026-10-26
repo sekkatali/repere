@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Votre scan · Repère</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@900&family=Red+Hat+Text:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css">
+<style>
+.hero{background:var(--ink);color:var(--accent-ink);padding:48px 24px 40px}
+.hero .in{max-width:1040px;margin:0 auto}
+.hero .eyebrow{font-size:15px;opacity:.85}
+.hero h1{font-family:var(--display);font-weight:900;text-transform:uppercase;letter-spacing:-0.03em;line-height:.92;font-size:clamp(40px,7vw,88px);margin-top:10px;overflow-wrap:anywhere}
+.hero .addr{margin-top:14px;opacity:.85;font-size:15px}
+.verdict{margin-top:24px;font-size:clamp(19px,2.2vw,24px);max-width:46ch;line-height:1.35}
+main{max-width:1040px;margin:0 auto;padding:32px 24px 80px}
+.kpis{margin-top:-64px;position:relative}
+.kpi .v small{font-size:20px;letter-spacing:0}
+.kpi .s{margin-top:4px;font-size:13px;color:var(--muted)}
+.kpi.dark .s{color:var(--accent-ink);opacity:.8}
+h2.sec{font-family:var(--display);font-weight:900;text-transform:uppercase;letter-spacing:-0.02em;color:var(--ink);font-size:clamp(28px,3.6vw,44px);line-height:.95;margin:48px 0 8px}
+p.lead{color:var(--muted);max-width:60ch;margin-bottom:20px}
+.waiting{list-style:none;padding:0;margin:0;display:grid;gap:4px}
+.waiting li{background:#fff;padding:14px 16px;display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+.waiting .when{color:var(--muted);font-size:14px;margin-left:auto}
+.rv{background:#fff;padding:20px;display:grid;gap:12px}
+.rv + .rv{margin-top:4px}
+.rv .meta{display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:14px;color:var(--muted)}
+.rv .meta b{color:var(--text);font-weight:500}
+.rv .said{font-size:16px;color:var(--text)}
+.rv .ans{background:var(--surface);padding:14px 16px;border-left:4px solid var(--ink)}
+.rv .ans .lab{font-size:13px;color:var(--muted);font-weight:500;margin-bottom:6px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.rv .ans p{white-space:pre-line}
+.copy{border:0;background:none;color:var(--ink);font-weight:500;cursor:pointer;padding:4px 0;font-size:14px}
+.copy:hover{text-decoration:underline}
+ol.acts{list-style:none;counter-reset:a;padding:0;margin:0;display:grid;gap:4px}
+ol.acts li{counter-increment:a;background:#fff;padding:18px 20px 18px 72px;position:relative;font-size:17px}
+ol.acts li::before{content:counter(a);position:absolute;left:20px;top:12px;font-family:var(--display);font-weight:900;font-size:36px;color:var(--ink);line-height:1}
+.cta{margin-top:56px;background:var(--ink);color:var(--accent-ink);padding:36px;display:grid;grid-template-columns:minmax(0,1.4fr) auto;gap:24px;align-items:center}
+.cta h3{font-family:var(--display);font-weight:900;text-transform:uppercase;letter-spacing:-0.02em;font-size:clamp(28px,3.4vw,42px);line-height:.95}
+.cta p{margin-top:12px;max-width:48ch;opacity:.92}
+.cta .btn{background:var(--accent-ink);color:var(--ink);min-height:54px;padding:0 26px;font-size:17px}
+.cta .btn:hover{background:#fff}
+.cta .fine{font-size:14px;opacity:.8;margin-top:10px;text-align:center}
+.state{max-width:640px;margin:0 auto;padding:72px 24px;text-align:left}
+.state h1{font-family:var(--display);font-weight:900;text-transform:uppercase;letter-spacing:-0.03em;color:var(--ink);font-size:clamp(36px,6vw,64px);line-height:.92;margin-bottom:18px}
+.state p{font-size:18px;margin-top:12px}
+.pulse{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--ink);margin-right:10px;animation:p 1.4s ease-in-out infinite}
+@keyframes p{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}}
+@media (max-width:720px){
+  .hero{padding:32px 16px 80px}
+  main{padding:24px 16px 64px}
+  .cta{grid-template-columns:1fr;padding:24px}
+  ol.acts li{padding-left:60px}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="wordmark" href="/">Repère</a>
+  <nav><a href="/#comment">Comment ça marche</a><a href="/inscription.html" id="topcta">Essayer 14 jours</a></nav>
+</header>
+<div id="root"><p class="loading">Chargement du scan…</p></div>
+
+<script type="module">
+import { sb, esc, stars } from '/assets/supa.js';
+const root = document.getElementById('root');
+const token = new URLSearchParams(location.search).get('t') || '';
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const fmt = (n) => Number(n).toLocaleString('fr-FR');
+const day = (d) => d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+
+function state(title, html) {
+  root.innerHTML = `<section class="state"><h1>${title}</h1>${html}</section>`;
+}
+
+async function load() {
+  if (!UUID.test(token)) return state('Lien incomplet', `<p>Ce lien de scan n'est pas complet. Ouvrez celui reçu par e-mail, ou <a href="/#scan">demandez un nouveau scan</a>.</p>`);
+  const { data, error } = await sb.rpc('get_scan', { p_token: token });
+  if (error) return state('Petit souci', `<p>Le scan n'a pas pu être chargé. Réessayez dans un instant.</p>`);
+  if (!data) return state('Scan introuvable', `<p>Ce lien ne correspond à aucun scan. <a href="/#scan">Demander un scan</a>.</p>`);
+  if (data.status === 'en_attente') {
+    state(`On scanne ${esc(data.restaurant)}`, `
+      <p><span class="pulse" aria-hidden="true"></span>Votre demande est bien reçue. On lit vos derniers avis Google, on regarde votre place dans le quartier et on prépare les réponses à vos 10 derniers avis.</p>
+      <p>Vous recevez le résultat par e-mail dès qu'il est prêt, en général dans la journée. Vous pouvez aussi garder cette page ouverte : elle se met à jour toute seule.</p>`);
+    setTimeout(load, 60000);
+    return;
+  }
+  if (data.status === 'introuvable') return state('Fiche introuvable', `<p>On n'a pas trouvé la fiche Google de ${esc(data.restaurant)} (${esc(data.city || '')}). Répondez simplement au mail reçu avec le lien de votre fiche Google Maps, et on relance le scan.</p>`);
+  render(data);
+}
+
+function render(d) {
+  const r = d.result || {};
+  const name = r.name || d.restaurant;
+  document.title = `Scan de ${name} · Repère`;
+  const read = r.read || 0, un = r.unanswered || 0;
+  const pct = read ? Math.round(100 * un / read) : 0;
+  const q = new URLSearchParams({ resto: name, ville: d.city || '', ...(r.maps_url ? { maps: r.maps_url } : {}) });
+  document.getElementById('topcta').href = '/inscription.html?' + q;
+  const rank = r.rank && r.rank.position ? r.rank : null;
+  const replies = Array.isArray(r.replies) ? r.replies : [];
+  const negs = Array.isArray(r.negatives) ? r.negatives : [];
+  const acts = Array.isArray(r.actions) ? r.actions : [];
+
+  root.innerHTML = `
+  <section class="hero"><div class="in">
+    <p class="eyebrow">Scan Repère · ${esc(day(d.done_at))}</p>
+    <h1>${esc(name)}</h1>
+    ${r.address ? `<p class="addr">${esc(r.address)}</p>` : ''}
+    ${r.summary ? `<p class="verdict">${esc(r.summary)}</p>` : ''}
+  </div></section>
+  <main>
+    <div class="kpis">
+      <div class="kpi"><div class="v num">${r.rating ? String(r.rating).replace('.', ',') : '—'}<small> / 5</small></div><div class="l">Note Google</div><div class="s">${r.reviews_count ? fmt(r.reviews_count) + ' avis' : ''}</div></div>
+      <div class="kpi dark"><div class="v num">${un}<small> / ${read}</small></div><div class="l">derniers avis sans réponse</div><div class="s">${pct} %</div></div>
+      <div class="kpi"><div class="v num" style="font-size:${r.last_reply && r.last_reply.length > 12 ? '24px' : '40px'}">${esc(r.last_reply || '—')}</div><div class="l">Dernière réponse de votre part</div></div>
+      <div class="kpi"><div class="v num">${rank ? rank.position + '<small>e</small>' : '—'}</div><div class="l">${rank ? 'sur Google Maps' : 'Rang dans le quartier'}</div><div class="s">${rank ? 'pour « ' + esc(rank.query) + ' »' : 'pas dans les premiers résultats'}</div></div>
+    </div>
+
+    ${negs.length ? `
+    <h2 class="sec">Les avis qui attendent</h2>
+    <p class="lead">Les avis mitigés sans réponse sont ceux que lisent en premier les clients qui hésitent. Une réponse calme suffit souvent à rassurer.</p>
+    <ul class="waiting">${negs.map((n) => `<li><span class="stars" aria-label="${n.stars} étoiles">${stars(n.stars)}</span><span>${esc(n.topic || '')}</span><span class="when">${esc(n.date || '')}</span></li>`).join('')}</ul>` : ''}
+
+    <h2 class="sec">Vos ${replies.length} réponses prêtes</h2>
+    <p class="lead">Rédigées pour vos derniers avis sans réponse, dans un ton simple et chaleureux. Copiez-les, ajustez si besoin, et collez-les sous chaque avis sur votre fiche Google${r.maps_url ? ` (<a href="${esc(r.maps_url)}" target="_blank" rel="noopener">ouvrir la fiche</a>)` : ''}.</p>
+    <div>${replies.map((x, i) => `
+      <article class="rv">
+        <div class="meta"><span class="stars" aria-label="${x.stars} étoiles">${stars(x.stars)}</span><b>${esc(x.author || 'Client')}</b><span>${esc(x.date || '')}</span></div>
+        ${x.excerpt ? `<p class="said">« ${esc(x.excerpt)} »</p>` : ''}
+        <div class="ans"><div class="lab"><span>Réponse proposée</span><button class="copy" data-i="${i}">Copier</button></div><p>${esc(x.reply || '')}</p></div>
+      </article>`).join('')}</div>
+
+    ${acts.length ? `
+    <h2 class="sec">Trois actions pour cette semaine</h2>
+    <ol class="acts">${acts.map((a) => `<li>${esc(a)}</li>`).join('')}</ol>` : ''}
+
+    <section class="cta">
+      <div>
+        <h3>Ces réponses, Repère les publie pour vous</h3>
+        <p>Chaque nouvel avis reçoit une réponse dans votre ton. Vous validez d'un « OK » par WhatsApp, SMS ou e-mail, et chaque dimanche vous recevez votre rapport : note, rang dans le quartier, ce que ChatGPT dit de vous.</p>
+      </div>
+      <div><a class="btn" href="/inscription.html?${q}">Essayer 14 jours gratuits</a><p class="fine">Puis 39 € HT/mois, sans engagement</p></div>
+    </section>
+  </main>`;
+
+  root.querySelectorAll('.copy').forEach((b) => b.addEventListener('click', async () => {
+    const t = replies[+b.dataset.i]?.reply || '';
+    try { await navigator.clipboard.writeText(t); b.textContent = 'Copié'; }
+    catch { const ta = document.createElement('textarea'); ta.value = t; document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove(); b.textContent = 'Copié'; }
+    setTimeout(() => (b.textContent = 'Copier'), 1800);
+  }));
+}
+load();
+</script>
+</body>
+</html>

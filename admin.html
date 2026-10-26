@@ -42,7 +42,7 @@
       <button role="tab" data-tab="mails" aria-selected="true">Mails à envoyer <span id="mails-count" class="num"></span></button>
       <button role="tab" data-tab="clients" aria-selected="false">Clients</button>
       <button role="tab" data-tab="prospects" aria-selected="false">Prospection</button>
-      <button role="tab" data-tab="scans" aria-selected="false">Demandes de scan</button>
+      <button role="tab" data-tab="scans" aria-selected="false">Scans <span id="scans-count"></span></button>
       <button role="tab" data-tab="queue" aria-selected="false">Avis en attente</button>
       <button role="tab" data-tab="runs" aria-selected="false">Journal de l'agent</button>
     </div>
@@ -75,7 +75,19 @@
     </div>
 
     <div data-panel="scans" class="hidden">
-      <div class="panel tablebox"><table><thead><tr><th>Reçue le</th><th>Restaurant</th><th>Ville</th><th>E-mail</th><th>Statut</th></tr></thead><tbody id="scans"></tbody></table></div>
+      <div class="panel">
+        <h2>Lancer un scan</h2>
+        <p class="muted" style="margin:-8px 0 14px;font-size:15px">Pour un prospect qui a répondu « oui », ou un resto rencontré. L'agent le réalise à son prochain passage (toutes les 2 h, de 9 h à 21 h).</p>
+        <form id="newscan" class="form" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));align-items:end">
+          <label class="field">Restaurant<input type="text" name="restaurant" required></label>
+          <label class="field">Ville / arrondissement<input type="text" name="city" required></label>
+          <label class="field">E-mail du resto<input type="email" name="email" required></label>
+          <label class="field">Lien Google Maps <small>facultatif</small><input type="url" name="maps_url"></label>
+          <button class="btn" type="submit">Lancer le scan</button>
+        </form>
+        <p class="msg hidden" id="newscan-msg"></p>
+      </div>
+      <div class="panel tablebox"><table><thead><tr><th>Reçue le</th><th>Restaurant</th><th>Ville</th><th>E-mail</th><th>Origine</th><th>Statut</th><th>Résultat</th><th></th></tr></thead><tbody id="scans"></tbody></table></div>
     </div>
     <div data-panel="queue" class="hidden"><div id="queue"></div></div>
 
@@ -108,7 +120,7 @@
 </dialog>
 
 <script type="module">
-import { sb, $, $$, esc, stars, fmtDate, euros, requireUser, logout, PLAN, daysLeft, PRICE } from '/assets/supa.js';
+import { sb, $, $$, esc, stars, fmtDate, euros, requireUser, logout, PLAN, daysLeft, PRICE, showMsg } from '/assets/supa.js';
 
 const ctx = await requireUser(); if (!ctx) throw 0;
 $('#who').textContent = ctx.user.email;
@@ -181,11 +193,16 @@ function render() {
   }).join('') : '<div class="empty">Aucun avis en attente de validation.</div>';
 
   // Demandes de scan
-  const SST = { nouveau: 'À faire', envoye: 'Scan envoyé', client: 'Devenu client' };
+  const SST = { nouveau: "En attente de l'agent", pret: 'Prêt à envoyer', envoye: 'Scan envoyé', client: 'Devenu client', introuvable: 'Fiche introuvable' };
+  const SRC = { site: 'Site', admin: 'Admin', prospect: 'Prospect' };
+  const todoScans = scans.filter((x) => x.status === 'nouveau' || x.status === 'pret').length;
+  $('#scans-count').textContent = todoScans ? `(${todoScans})` : '';
   $('#scans').innerHTML = scans.length ? scans.map((x) => `<tr><td class="num">${fmtDate(x.created_at)}</td><td>${esc(x.restaurant)}</td><td>${esc(x.city || '')}</td>
-    <td><a href="mailto:${esc(x.email)}">${esc(x.email)}</a></td>
-    <td><select data-sid="${x.id}" style="min-height:34px;padding:2px 6px;font-size:14px;width:auto">${Object.entries(SST).map(([k, l]) => `<option value="${k}"${k === x.status ? ' selected' : ''}>${l}</option>`).join('')}</select></td></tr>`).join('')
-    : '<tr><td colspan="5" class="muted">Aucune demande pour l\'instant.</td></tr>';
+    <td><a href="mailto:${esc(x.email)}">${esc(x.email)}</a></td><td>${SRC[x.source] || ''}</td>
+    <td><select data-sid="${x.id}" style="min-height:34px;padding:2px 6px;font-size:14px;width:auto">${Object.entries(SST).map(([k, l]) => `<option value="${k}"${k === x.status ? ' selected' : ''}>${l}</option>`).join('')}</select></td>
+    <td>${x.result ? `<a href="/scan?t=${x.token}" target="_blank" rel="noopener">Voir le scan</a>` : `<a class="muted" href="/scan?t=${x.token}" target="_blank" rel="noopener">page de suivi</a>`}${x.sent_at ? `<br><span class="muted" style="font-size:13px">envoyé le ${fmtDate(x.sent_at)}</span>` : ''}</td>
+    <td>${x.result ? `<button class="btn small${x.sent_at ? ' alt' : ''}" data-send="${x.id}">${x.sent_at ? 'Renvoyer' : 'Envoyer'}</button>` : ''}</td></tr>`).join('')
+    : '<tr><td colspan="8" class="muted">Aucune demande pour l\'instant.</td></tr>';
 
   // Journal
   $('#runs').innerHTML = runs.length ? runs.map((r) => `<tr><td class="num">${fmtDate(r.run_on)}</td><td>${esc(r.zones || '')}</td><td class="num">${r.analysed ?? ''}</td><td class="num">${r.with_email ?? ''}</td><td class="num">${r.drafts ?? ''}</td><td class="num">${r.sent_since ?? ''}</td><td class="num">${r.replies_since ?? ''}</td><td>${esc(r.problems || '')}</td></tr>`).join('')
@@ -266,7 +283,7 @@ function renderProspects() {
     <td class="num">${p.unanswered ?? '?'} / ${p.reviews_read ?? '?'}</td>
     <td>${esc(p.email || '')}${p.sent_at ? `<br><span class="muted" style="font-size:13px">envoyé le ${fmtDate(p.sent_at)}</span>` : ''}</td>
     <td><select data-pid="${p.id}" style="min-height:34px;padding:2px 6px;font-size:14px;width:auto">${Object.entries(PSTAT).map(([k, [l]]) => `<option value="${k}"${k === p.status ? ' selected' : ''}>${l}</option>`).join('')}</select></td>
-    <td style="max-width:420px">${p.subject ? `<b style="font-weight:500">${esc(p.subject)}</b><br>` : ''}<span class="muted" style="font-size:14px">${esc((p.notes || '').slice(0, 220))}</span></td></tr>`).join('')
+    <td style="max-width:420px">${p.subject ? `<b style="font-weight:500">${esc(p.subject)}</b><br>` : ''}<span class="muted" style="font-size:14px">${esc((p.notes || '').slice(0, 220))}</span>${p.status === 'a_repondu' && p.email ? `<br><button class="btn small" data-scanp="${p.id}" style="margin-top:6px">Lancer le scan</button>` : ''}</td></tr>`).join('')
     || '<tr><td colspan="8" class="muted">Aucun restaurant.</td></tr>';
 }
 $('#p-filter').onchange = () => { if ($('#p-filter').value) pGroup = 'all'; renderProspects(); };
@@ -274,6 +291,35 @@ $('#funnel').addEventListener('click', (e) => {
   const b = e.target.closest('[data-group]'); if (!b) return;
   pGroup = b.dataset.group; $('#p-filter').value = ''; renderProspects();
 });
+$('#scans').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-send]'); if (!b) return;
+  const x = scans.find((s) => s.id === b.dataset.send);
+  if (!confirm(`${x.sent_at ? 'Renvoyer' : 'Envoyer'} le scan de ${x.restaurant} à ${x.email} ?`)) return;
+  b.disabled = true; b.textContent = 'Envoi…';
+  const { data: { session } } = await sb.auth.getSession();
+  const r = await fetch('/api/send-scan', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }, body: JSON.stringify({ scan_id: x.id, resend: !!x.sent_at }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { b.disabled = false; b.textContent = x.sent_at ? 'Renvoyer' : 'Envoyer'; return alert(j.error || 'Envoi impossible'); }
+  Object.assign(x, { status: x.status === 'client' ? 'client' : 'envoye', sent_at: new Date().toISOString() }); render();
+});
+$('#newscan').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = new FormData(e.target); const m = $('#newscan-msg');
+  const row = { restaurant: f.get('restaurant').trim(), city: f.get('city').trim(), email: f.get('email').trim().toLowerCase(), maps_url: f.get('maps_url').trim() || null, source: 'admin' };
+  const { data, error } = await sb.from('scan_requests').insert(row).select().single();
+  if (error) return showMsg(m, error.message, 'err');
+  scans.unshift(data); e.target.reset(); render();
+  showMsg(m, `Scan de ${data.restaurant} lancé. L'agent le réalise à son prochain passage.`);
+});
+async function scanFromProspect(id) {
+  const p = prospects.find((x) => x.id === id);
+  if (!p?.email) return alert("Pas d'e-mail pour ce prospect.");
+  if (scans.some((s) => s.prospect_id === id)) return alert('Un scan existe déjà pour ce restaurant (onglet Scans).');
+  const { data, error } = await sb.from('scan_requests').insert({ restaurant: p.name, city: p.zone, email: p.email, maps_url: p.maps_url, source: 'prospect', prospect_id: p.id }).select().single();
+  if (error) return alert(error.message);
+  scans.unshift(data); render(); alert(`Scan de ${p.name} lancé. Il apparaîtra dans l'onglet Scans dès que l'agent l'aura fait.`);
+}
+$('#prospects').addEventListener('click', (e) => { const b = e.target.closest('[data-scanp]'); if (b) scanFromProspect(b.dataset.scanp); });
 $('#scans').addEventListener('change', async (e) => {
   const s = e.target.closest('[data-sid]'); if (!s) return;
   const { error } = await sb.from('scan_requests').update({ status: s.value }).eq('id', s.dataset.sid);

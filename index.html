@@ -359,7 +359,7 @@ button,input,textarea{font:inherit;color:inherit}
 <section class="pricing" id="tarif" aria-label="Tarif">
   <div class="plan scan" id="scan">
     <h2 class="display">Le scan</h2>
-    <p class="who">Pour savoir où en est votre fiche, en 30 secondes.</p>
+    <p class="who">Votre note, vos avis sans réponse, votre rang dans le quartier et les réponses prêtes pour vos 10 derniers avis. Trente secondes pour le demander, le résultat dans la journée.</p>
     <form class="scan-form" id="scanform">
       <label>Nom du restaurant<input name="resto" required autocomplete="organization"></label>
       <label>Ville ou arrondissement<input name="ville" required></label>
@@ -394,7 +394,7 @@ button,input,textarea{font:inherit;color:inherit}
 </section>
 
 <a class="cta" href="#scan">
-  <p>Votre scan gratuit en 30 secondes, sans inscription.</p>
+  <p>Votre scan gratuit, sans inscription. Trente secondes pour le demander.</p>
   <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="4" aria-hidden="true"><path d="M12 36 36 12M16 12h20v20"/></svg>
   <span class="word display">Scanner</span>
 </a>
@@ -462,10 +462,11 @@ const form=document.getElementById('scanform');
 form.addEventListener('submit',async e=>{
   e.preventDefault();const f=new FormData(form);const t=document.getElementById('thanks');
   const btn=document.querySelector('button[form=scanform]');btn.disabled=true;
-  const {error}=await sb.from('scan_requests').insert({restaurant:f.get('resto'),city:f.get('ville'),email:String(f.get('email')).trim().toLowerCase()});
+  const token=crypto.randomUUID();
+  const {error}=await sb.from('scan_requests').insert({token,restaurant:String(f.get('resto')).trim(),city:String(f.get('ville')).trim(),email:String(f.get('email')).trim().toLowerCase()});
   btn.disabled=false;
   if(error){t.textContent="La demande n'a pas pu partir. Réessayez dans un instant.";t.hidden=false;return;}
-  t.textContent=`C'est noté pour ${f.get('resto')}. Votre scan arrive à ${f.get('email')} sous 24 heures.`;t.hidden=false;form.hidden=true;btn.hidden=true;
+  location.href='/scan.html?t='+token;
 });
 </script>
 </body>

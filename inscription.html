@@ -58,6 +58,9 @@
 <script type="module">
 import { sb, $, showMsg } from '/assets/supa.js';
 const f = $('#f');
+// Pré-remplissage depuis le scan (?resto=…&ville=…&maps=…&email=…)
+{ const q = new URLSearchParams(location.search);
+  for (const [k, n] of [['resto', 'restaurant_name'], ['ville', 'city'], ['maps', 'google_maps_url'], ['email', 'email']]) if (q.get(k) && f[n]) f[n].value = q.get(k); }
 f.addEventListener('change', () => { $('#go').textContent = f.mode.value === 'pay' ? 'Payer et créer mon espace' : 'Créer mon espace'; });
 f.addEventListener('submit', async (e) => {
   e.preventDefault();
