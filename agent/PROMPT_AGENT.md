@@ -18,7 +18,7 @@ Un restaurant au statut stop, a_repondu, essai ou client n'est jamais recontact�
 
 ÉTAPE 2 — QUOTA DU JOUR (prudence avant tout)
 - Compte les mails en attente : select count(*) from public.prospects where status = 'brouillon'. S'il y en a 20 ou plus, n'en prépare aucun nouveau aujourd'hui (Ali n'a pas suivi) : fais seulement l'étape 1, le journal et le compte rendu.
-- Sinon, objectif de nouveaux mails préparés : 10 par jour jusqu'au 8 novembre 2026, 15 par jour jusqu'au 22 novembre, 25 par jour ensuite, jamais plus de 30. Les prospects déjà au statut a_rediger avec un e-mail passent en premier (par score décroissant), avant toute nouvelle zone. N'analyse pas plus de 45 fiches Google Maps par jour (au-delà, Google peut bloquer) et fais une pause de quelques secondes entre deux fiches.
+- Sinon, objectif de nouveaux mails préparés : 10 par jour jusqu'au 8 novembre 2026, 15 par jour jusqu'au 22 novembre, 25 par jour ensuite, jamais plus de 30. Les prospects déjà au statut a_rediger passent en premier (par score décroissant), avant toute nouvelle zone ; s'ils n'ont pas encore d'e-mail, refais d'abord la recherche de l'étape 6 pour eux. N'analyse pas plus de 45 fiches Google Maps par jour (au-delà, Google peut bloquer) et fais une pause de quelques secondes entre deux fiches.
 
 ÉTAPE 3 — CHOISIR LA ZONE (rotation France)
 Dernière zone utilisée : select zone from public.prospects order by created_at desc limit 1. Prends la suivante dans cette liste (après la dernière, recommence au début) :
