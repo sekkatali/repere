@@ -14,6 +14,7 @@ Cherche des messages avec la requête « deliveredto:alisekkat1234@gmail.com ».
 ÉTAPE 1 — METTRE À JOUR LE SUIVI
 select id, name, email from public.prospects where status = 'envoye' and email is not null;
 Pour chacun, si Gmail contient un message reçu de cette adresse (from:<email>) → status = a_repondu, ou stop si la réponse demande de ne plus être contacté (stop, désinscrire, pas intéressé…). Mets dans notes un résumé d'une ligne de la réponse (ajouté au début des notes existantes). Les mails rejetés (« Delivery Status Notification », « Mail Delivery Subsystem » mentionnant l'adresse) → status = ecarte_sans_email avec la raison dans notes.
+Rattrapage (règles assouplies le 26 octobre) : repasse en a_rediger les prospects ecarte_repond qui ont au moins un avis sans réponse (unanswered > 0), et les ecarte_sans_email dont les notes parlent d'une adresse vue dans le code de la page.
 Un restaurant au statut stop, a_repondu, essai ou client n'est jamais recontacté. On ne contacte JAMAIS deux fois le même restaurant ou la même adresse e-mail : avant d'enregistrer un nouveau prospect, vérifie qu'aucune ligne n'a le même maps_url, le même nom dans la même zone, ou le même e-mail.
 
 ÉTAPE 2 — QUOTA DU JOUR (prudence avant tout)
@@ -136,7 +137,7 @@ Forme :
 - Objet : court, personnel, sans majuscules partout ni mot racoleur, jamais trompeur. Registre : « Les avis du <nom> », « Vos 40 derniers avis Google », « Une question sur vos avis, <nom> ». Varie d'un mail à l'autre.
 - Relis chaque mail : chaque chiffre et chaque citation viennent de l'analyse de CE restaurant. Nom commercial long (« X – Restaurant Bar Villeurbanne ») → nom court. Pour un prospect a_rediger d'un jour précédent, les éléments sont dans notes ; s'ils ne suffisent pas, réanalyse la fiche.
 
-Exemple (Café Lobut, Villeurbanne — déjà préparé, ne pas le refaire ni le recopier tel quel) :
+Exemple (Café Lobut, Villeurbanne — déjà envoyé, ne pas le refaire ni le recopier tel quel) :
 Objet : Les 1 000 avis du Café Lobut
 « Bonjour,
 
