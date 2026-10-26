@@ -71,3 +71,11 @@ export async function ownedRestaurant(userId, restaurantId) {
   if (!rows?.length) throw Object.assign(new Error('Établissement introuvable'), { status: 404 });
   return rows[0];
 }
+
+// Vérifie que l'utilisateur connecté est l'administrateur.
+export async function requireAdmin(req) {
+  const user = await currentUser(req);
+  const rows = await db(`profiles?id=eq.${user.id}&select=role`);
+  if (rows?.[0]?.role !== 'admin') throw Object.assign(new Error('Réservé à l\'administrateur'), { status: 403 });
+  return user;
+}

@@ -39,14 +39,23 @@
     </div>
 
     <div class="tabs" role="tablist">
-      <button role="tab" data-tab="clients" aria-selected="true">Clients</button>
+      <button role="tab" data-tab="mails" aria-selected="true">Mails à envoyer <span id="mails-count" class="num"></span></button>
+      <button role="tab" data-tab="clients" aria-selected="false">Clients</button>
       <button role="tab" data-tab="prospects" aria-selected="false">Prospection</button>
       <button role="tab" data-tab="scans" aria-selected="false">Demandes de scan</button>
       <button role="tab" data-tab="queue" aria-selected="false">Avis en attente</button>
       <button role="tab" data-tab="runs" aria-selected="false">Journal de l'agent</button>
     </div>
 
-    <div data-panel="clients">
+    <div data-panel="mails">
+      <div class="panel" style="display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:4px">
+        <p id="sent-today" style="font-weight:500"></p>
+        <p class="muted" style="font-size:14px;max-width:62ch">Relisez, modifiez si besoin, puis envoyez. Le mail part de votre Gmail ; les réponses arrivent dans votre boîte et l'agent met le suivi à jour chaque matin.</p>
+      </div>
+      <div id="mails"></div>
+    </div>
+
+    <div data-panel="clients" class="hidden">
       <div class="panel tablebox">
         <table><thead><tr><th>Établissement</th><th>Client</th><th>Ville</th><th>Statut</th><th>Échéance</th><th>Validation</th><th>À valider</th><th>Inscrit le</th></tr></thead><tbody id="clients"></tbody></table>
       </div>
@@ -147,6 +156,8 @@ function render() {
   $('#k-sent').textContent = sent.length;
   $('#k-rate').textContent = (sent.length ? Math.round((replied.length / sent.length) * 1000) / 10 : 0).toLocaleString('fr-FR') + ' %';
 
+  renderMails();
+
   // Clients
   const todoBy = (id) => todo.filter((r) => r.restaurant_id === id).length;
   $('#clients').innerHTML = restos.length ? restos.map((r) => {
@@ -187,6 +198,57 @@ function render() {
     : '<tr><td colspan="8" class="muted">L\'agent n\'a pas encore tourné.</td></tr>';
 }
 
+const isToday = (d) => d && new Date(d).toDateString() === new Date().toDateString();
+const SEND_CAP = 20;
+function renderMails() {
+  const list = prospects.filter((p) => p.status === 'brouillon' || (p.status === 'a_rediger' && p.body)).sort((a, b) => (b.score || 0) - (a.score || 0));
+  const sentToday = prospects.filter((p) => isToday(p.sent_at)).length;
+  $('#mails-count').textContent = list.length ? `(${list.length})` : '';
+  $('#sent-today').textContent = `Envoyés aujourd'hui : ${sentToday} / ${SEND_CAP} (plafond pour protéger votre adresse du spam)`;
+  $('#mails').innerHTML = list.length ? list.map((p) => `
+    <article class="review" data-mid="${p.id}">
+      <div class="meta">
+        <b style="font-weight:500;color:var(--ink);font-size:17px">${p.maps_url ? `<a href="${esc(p.maps_url)}" target="_blank" rel="noopener">${esc(p.name)}</a>` : esc(p.name)}</b>
+        <span>${esc(p.zone || '')}</span><span>Score ${p.score ?? '?'}</span><span>${p.unanswered ?? '?'} / ${p.reviews_read ?? '?'} avis sans réponse</span>
+      </div>
+      <p style="font-size:15px">À : <b style="font-weight:500">${esc(p.email || 'pas d\'e-mail')}</b> <span class="muted">· ${esc(p.email_source || '')}</span></p>
+      ${p.notes ? `<p class="muted" style="font-size:14px">${esc(p.notes)}</p>` : ''}
+      <label class="field">Objet<input type="text" data-f="subject" value="${esc(p.subject || '')}"></label>
+      <label class="field">Message<textarea data-f="body" rows="14">${esc(p.body || '')}</textarea></label>
+      <div class="actions">
+        <button class="btn" data-act="send"${p.email ? '' : ' disabled'}>Envoyer</button>
+        <button class="btn alt" data-act="save">Enregistrer</button>
+        <button class="btn ghost" data-act="never">Ne jamais contacter</button>
+      </div>
+      <p class="msg hidden" data-msg></p>
+    </article>`).join('') : '<div class="empty">Aucun mail en attente. L\'agent en prépare de nouveaux chaque matin de semaine.</div>';
+}
+$('#mails').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const card = b.closest('[data-mid]'); const id = card.dataset.mid; const p = prospects.find((x) => x.id === id);
+  const subject = card.querySelector('[data-f=subject]').value.trim(); const body = card.querySelector('[data-f=body]').value.trim();
+  const m = card.querySelector('[data-msg]'); const say = (t, k) => { m.textContent = t; m.className = 'msg ' + k; };
+  if (b.dataset.act === 'save') {
+    const { error } = await sb.from('prospects').update({ subject, body }).eq('id', id);
+    if (error) return say(error.message, 'err');
+    Object.assign(p, { subject, body }); return say('Enregistré.', 'ok');
+  }
+  if (b.dataset.act === 'never') {
+    if (!confirm(`Ne jamais contacter ${p.name} ?`)) return;
+    const { error } = await sb.from('prospects').update({ status: 'stop' }).eq('id', id);
+    if (error) return say(error.message, 'err');
+    p.status = 'stop'; return render();
+  }
+  if (!confirm(`Envoyer ce mail à ${p.email} ?`)) return;
+  b.disabled = true; say('Envoi en cours…', 'ok');
+  const { data: { session } } = await sb.auth.getSession();
+  const r = await fetch('/api/send-prospect', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }, body: JSON.stringify({ prospect_id: id, subject, body }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { b.disabled = false; return say(j.error || 'Envoi impossible', 'err'); }
+  Object.assign(p, { status: 'envoye', subject, body, sent_at: new Date().toISOString() });
+  render();
+});
+
 function renderProspects() {
   const f = $('#p-filter').value;
   const list = f ? prospects.filter((p) => p.status === f) : prospects;
@@ -196,7 +258,7 @@ function renderProspects() {
     <td>${p.maps_url ? `<a href="${esc(p.maps_url)}" target="_blank" rel="noopener">${esc(p.name)}</a>` : esc(p.name)}<br><span class="muted" style="font-size:13px">${esc(p.phone || '')}</span></td>
     <td class="num"><b style="font-weight:500">${p.score ?? ''}</b></td>
     <td class="num">${p.unanswered ?? '?'} / ${p.reviews_read ?? '?'}</td>
-    <td>${esc(p.email || '')}</td>
+    <td>${esc(p.email || '')}${p.sent_at ? `<br><span class="muted" style="font-size:13px">envoyé le ${fmtDate(p.sent_at)}</span>` : ''}</td>
     <td><select data-pid="${p.id}" style="min-height:34px;padding:2px 6px;font-size:14px;width:auto">${Object.entries(PSTAT).map(([k, [l]]) => `<option value="${k}"${k === p.status ? ' selected' : ''}>${l}</option>`).join('')}</select></td>
     <td style="max-width:420px">${p.subject ? `<b style="font-weight:500">${esc(p.subject)}</b><br>` : ''}<span class="muted" style="font-size:14px">${esc((p.notes || '').slice(0, 220))}</span></td></tr>`).join('')
     || '<tr><td colspan="8" class="muted">Aucun restaurant.</td></tr>';
