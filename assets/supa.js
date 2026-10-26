@@ -2,8 +2,8 @@
 // Les deux valeurs ci-dessous sont publiques (clé « publishable ») : la sécurité est assurée par les règles RLS de la base.
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 
-export const SUPABASE_URL = 'https://REMPLACER.supabase.co';
-export const SUPABASE_KEY = 'REMPLACER_CLE_PUBLISHABLE';
+export const SUPABASE_URL = 'https://powlybocpgjxhrliqgyf.supabase.co';
+export const SUPABASE_KEY = 'sb_publishable_337p-bm0y6v1M-SJgrgYEQ_KYF8IvlK';
 
 export const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }

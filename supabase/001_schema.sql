@@ -242,3 +242,9 @@ alter table public.scan_requests enable row level security;
 create policy "scan : tout le monde peut demander" on public.scan_requests for insert to anon, authenticated
   with check (status = 'nouveau');
 create policy "scan : admin" on public.scan_requests for all using (public.is_admin()) with check (public.is_admin());
+
+-- Comptes déjà présents dans le projet (créés avant Repère) : on leur crée un profil.
+insert into public.profiles (id, email, role)
+select id, email, case when lower(email) = 'alisekkat1234@gmail.com' then 'admin' else 'client' end
+from auth.users where email is not null
+on conflict (id) do nothing;
