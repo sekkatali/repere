@@ -14,6 +14,23 @@ export const fail = (e) => json({ error: e.message || 'Erreur' }, e.status || 50
 
 export const siteUrl = (req) => process.env.SITE_URL || new URL(req.url).origin;
 
+// Valeurs publiques du projet Supabase REPERE (les mêmes que dans assets/supa.js) : pas besoin de les mettre dans Vercel.
+const PUBLIC_SUPABASE_URL = 'https://ovjazrnndlmnssbsqqld.supabase.co';
+const PUBLIC_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92amF6cm5uZGxtbnNzYnNxcWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI5NjY4NDgsImV4cCI6MjEwODU0Mjg0OH0.kdjpPMs805OSHMZhZHAfT9CAPUKehjx3S0hLYN-mAGI';
+export const supabaseUrl = () => process.env.SUPABASE_URL || PUBLIC_SUPABASE_URL;
+export const bearer = (req) => (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+
+// Accès à la base AU NOM de l'utilisateur connecté (les règles RLS s'appliquent) : pas de clé secrète nécessaire.
+export async function userDb(token, path, { method = 'GET', body, prefer } = {}) {
+  const r = await fetch(supabaseUrl() + '/rest/v1/' + path, {
+    method, headers: { apikey: PUBLIC_ANON_KEY, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', ...(prefer ? { Prefer: prefer } : {}) },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const t = await r.text();
+  if (!r.ok) throw Object.assign(new Error('Base de données : ' + t), { status: 500 });
+  return t ? JSON.parse(t) : null;
+}
+
 // --- Stripe ---------------------------------------------------------------
 function form(obj, prefix = '', out = new URLSearchParams()) {
   for (const [k, v] of Object.entries(obj)) {
@@ -46,7 +63,7 @@ export function verifyStripe(payload, header) {
 // --- Supabase (clé service, côté serveur uniquement) ------------------------------
 const sbHeaders = () => ({ apikey: env('SUPABASE_SERVICE_ROLE_KEY'), Authorization: 'Bearer ' + env('SUPABASE_SERVICE_ROLE_KEY'), 'Content-Type': 'application/json' });
 export async function db(path, { method = 'GET', body, prefer } = {}) {
-  const r = await fetch(env('SUPABASE_URL') + '/rest/v1/' + path, {
+  const r = await fetch(supabaseUrl() + '/rest/v1/' + path, {
     method, headers: { ...sbHeaders(), ...(prefer ? { Prefer: prefer } : {}) }, body: body ? JSON.stringify(body) : undefined
   });
   const t = await r.text();
@@ -54,15 +71,15 @@ export async function db(path, { method = 'GET', body, prefer } = {}) {
   return t ? JSON.parse(t) : null;
 }
 export async function auth(path, { method = 'POST', body, query = '' } = {}) {
-  const r = await fetch(env('SUPABASE_URL') + '/auth/v1/' + path + query, { method, headers: sbHeaders(), body: body ? JSON.stringify(body) : undefined });
+  const r = await fetch(supabaseUrl() + '/auth/v1/' + path + query, { method, headers: sbHeaders(), body: body ? JSON.stringify(body) : undefined });
   const t = await r.text();
   return { ok: r.ok, status: r.status, data: t ? JSON.parse(t) : null };
 }
 // Vérifie le jeton de l'utilisateur connecté (envoyé par la page) et renvoie l'utilisateur.
 export async function currentUser(req) {
-  const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  const token = bearer(req);
   if (!token) throw Object.assign(new Error('Non connecté'), { status: 401 });
-  const r = await fetch(env('SUPABASE_URL') + '/auth/v1/user', { headers: { apikey: env('SUPABASE_SERVICE_ROLE_KEY'), Authorization: 'Bearer ' + token } });
+  const r = await fetch(supabaseUrl() + '/auth/v1/user', { headers: { apikey: PUBLIC_ANON_KEY, Authorization: 'Bearer ' + token } });
   if (!r.ok) throw Object.assign(new Error('Session expirée, reconnectez-vous'), { status: 401 });
   return r.json();
 }
@@ -75,7 +92,7 @@ export async function ownedRestaurant(userId, restaurantId) {
 // Vérifie que l'utilisateur connecté est l'administrateur.
 export async function requireAdmin(req) {
   const user = await currentUser(req);
-  const rows = await db(`profiles?id=eq.${user.id}&select=role`);
+  const rows = await userDb(bearer(req), `profiles?id=eq.${user.id}&select=role`);
   if (rows?.[0]?.role !== 'admin') throw Object.assign(new Error('Réservé à l\'administrateur'), { status: 403 });
   return user;
 }

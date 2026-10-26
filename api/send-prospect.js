@@ -1,13 +1,14 @@
 // POST /api/send-prospect — envoie un mail de prospection depuis l'admin (Gmail d'Ali, via SMTP + mot de passe d'application).
 // Garde-fous : admin uniquement, jamais deux envois au même resto, plafond d'envois par jour (délivrabilité).
 import nodemailer from 'nodemailer';
-import { env, json, fail, db, requireAdmin } from './_lib.js';
+import { env, json, fail, userDb, bearer, requireAdmin } from './_lib.js';
 
 const EMAIL_RX = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export async function POST(req) {
   try {
     await requireAdmin(req);
+    const db = (path, opts) => userDb(bearer(req), path, opts);
     const { prospect_id, subject, body } = await req.json().catch(() => ({}));
     if (!prospect_id || !String(subject || '').trim() || !String(body || '').trim()) return json({ error: 'Objet et texte requis' }, 400);
 
