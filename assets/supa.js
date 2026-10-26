@@ -2,8 +2,8 @@
 // Les deux valeurs ci-dessous sont publiques (clé « publishable ») : la sécurité est assurée par les règles RLS de la base.
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 
-export const SUPABASE_URL = 'https://powlybocpgjxhrliqgyf.supabase.co';
-export const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvd2x5Ym9jcGdqeGhybGlxZ3lmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3ODY5MTQsImV4cCI6MjEwODM2MjkxNH0.EbP9hPZ0dXRMJKnIa-R-mJhwcGbL7_b04we3Weaq2_c';
+export const SUPABASE_URL = 'https://ovjazrnndlmnssbsqqld.supabase.co';
+export const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im92amF6cm5uZGxtbnNzYnNxcWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI5NjY4NDgsImV4cCI6MjEwODU0Mjg0OH0.kdjpPMs805OSHMZhZHAfT9CAPUKehjx3S0hLYN-mAGI';
 
 export const sb = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }
