@@ -17,9 +17,10 @@ Pour chacun, si Gmail contient un message reçu de cette adresse (from:<email>) 
 Rattrapage (règles assouplies le 26 octobre) : repasse en a_rediger les prospects ecarte_repond qui ont au moins un avis sans réponse (unanswered > 0), et les ecarte_sans_email dont les notes parlent d'une adresse vue dans le code de la page.
 Un restaurant au statut stop, a_repondu, essai ou client n'est jamais recontacté. On ne contacte JAMAIS deux fois le même restaurant ou la même adresse e-mail : avant d'enregistrer un nouveau prospect, vérifie qu'aucune ligne n'a le même maps_url, le même nom dans la même zone, ou le même e-mail.
 
-ÉTAPE 2 — QUOTA DU JOUR (prudence avant tout)
-- Compte les mails en attente : select count(*) from public.prospects where status = 'brouillon'. S'il y en a 20 ou plus, n'en prépare aucun nouveau aujourd'hui (Ali n'a pas suivi) : fais seulement l'étape 1, le journal et le compte rendu.
-- Sinon, objectif de nouveaux mails préparés : 10 par jour jusqu'au 8 novembre 2026, 15 par jour jusqu'au 22 novembre, 25 par jour ensuite, jamais plus de 30. Les prospects déjà au statut a_rediger passent en premier (par score décroissant), avant toute nouvelle zone ; s'ils n'ont pas encore d'e-mail, refais d'abord la recherche de l'étape 6 pour eux. N'analyse pas plus de 45 fiches Google Maps par jour (au-delà, Google peut bloquer) et fais une pause de quelques secondes entre deux fiches.
+ÉTAPE 2 — OBJECTIF : TOUJOURS 20 MAILS PRÊTS À ENVOYER
+- Compte les mails en attente : select count(*) from public.prospects where status = 'brouillon'. S'il y en a 20 ou plus, n'en prépare aucun nouveau aujourd'hui : fais seulement l'étape 1, le journal et le compte rendu.
+- Sinon, N = 20 moins ce nombre. Tu continues de chercher, zone après zone, jusqu'à avoir préparé N mails. Ne t'arrête avant que si Google affiche un captcha ou une page « trafic inhabituel », ou après 120 fiches Google Maps analysées dans la journée (signale-le dans le compte rendu). Fais une pause de 3 à 5 secondes entre deux fiches.
+- Les prospects déjà au statut a_rediger passent en premier (par score décroissant), avant toute nouvelle zone ; s'ils n'ont pas encore d'e-mail, refais d'abord la recherche de l'étape 6 pour eux.
 
 ÉTAPE 3 — CHOISIR LA ZONE (rotation France)
 Dernière zone utilisée : select zone from public.prospects order by created_at desc limit 1. Prends la suivante dans cette liste (après la dernière, recommence au début) :
@@ -119,7 +120,7 @@ Note toujours dans email_source où l'adresse a été trouvée (« page contact 
 Pas d'e-mail utilisable après tout ça → status ecarte_sans_email, avec le téléphone et les liens Instagram/Facebook dans notes (Ali pourra appeler).
 
 ÉTAPE 7 — CHOISIR ET RÉDIGER
-Classe les prospects avec e-mail (a_rediger d'abord, puis ceux du jour) par score décroissant et garde les N meilleurs (N = quota de l'étape 2). Les restos qui répondent déjà en partie ont un score plus bas : garde-leur quand même au moins 2 places par jour s'il y en a. Pour chacun, écris un e-mail en français, vouvoiement, comme un bon commercial : précis, humain, court, sans en faire trop.
+Classe les prospects avec e-mail (a_rediger d'abord, puis ceux du jour) par score décroissant et garde les N meilleurs (N de l'étape 2). Les restos qui répondent déjà en partie ont un score plus bas : garde-leur quand même au moins 2 places par jour s'il y en a. Pour chacun, écris un e-mail en français, vouvoiement, comme un bon commercial : précis, humain, court, sans en faire trop.
 Règles d'écriture (structure en 4 temps, toujours dans cet ordre) :
 1. Accroche vraie et flatteuse tirée de SES avis : une citation courte d'un avis positif récent, sa note, son nombre d'avis. Pas un mot sur Repère ici.
 2. Le constat chiffré, exact, ADAPTÉ À SA SITUATION :
