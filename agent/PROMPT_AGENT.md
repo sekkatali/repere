@@ -71,7 +71,8 @@ const recent=s=>/jour|semaine|un mois|2 mois/.test(s);
   posUnanswered:unanswered.filter(r=>r.stars>=4&&r.text.length>40).slice(0,3)})
 ```
 Si le script ne renvoie rien d'exploitable (Google a changé sa page), utilise get_page_text sur l'onglet Avis et compte toi-même les « Réponse du propriétaire ». Si Google affiche un captcha ou une page « trafic inhabituel », arrête l'analyse pour aujourd'hui et signale-le.
-Enregistre aussi les écartés (pour ne pas les réanalyser) : fermé définitivement → ecarte_chaine ; taux sans réponse < 60 % → ecarte_repond.
+Enregistre aussi les écartés (pour ne pas les réanalyser) : fermé définitivement → ecarte_chaine ; répond à TOUS les avis lus (0 sans réponse) → ecarte_repond. Un resto qui répond à une partie de ses avis seulement est un prospect comme les autres (il tient à ses avis mais manque de temps) : on le garde, avec un mail adapté (étape 7).
+Note dans notes la situation : « aucune réponse », « répond à 24 avis sur 30, dernière réponse il y a 3 semaines », etc., plus la meilleure citation positive et les négatifs sans réponse résumés.
 
 SCORE (0 à 100) — qui a le plus de chances de répondre :
 +50 × taux sans réponse sur les avis lus
@@ -80,6 +81,7 @@ SCORE (0 à 100) — qui a le plus de chances de répondre :
 +10 si le dernier avis date de moins de 2 semaines (resto actif)
 +10 si l'e-mail est sur le domaine du resto ou sur sa page contact
 +5 si le resto a déjà répondu à des avis par le passé (il y tient, il manque de temps)
++10 si le resto répondait avant mais n'a répondu à aucun des avis des 3 dernières semaines (il a décroché)
 
 ÉTAPE 6 — TROUVER L'E-MAIL
 Si la fiche a un site : navigate vers le site, attends 2 secondes, exécute :
@@ -99,25 +101,38 @@ const seen=new Set();
   social:[...new Set([...document.querySelectorAll('a')].map(a=>a.href).filter(h=>/instagram\.com|facebook\.com/.test(h)))].slice(0,3),
   emails:all.filter(o=>!seen.has(o.email)&&seen.add(o.email))})
 ```
-Règles (CNIL, prospection B2B) :
-- Prends en priorité une adresse générique ou du domaine du resto (contact@, bonjour@, reservation@…), trouvée sur l'accueil ou la page contact.
-- Une adresse trouvée seulement dans les mentions légales n'est valable que si le contexte montre qu'elle appartient au restaurant, à sa société ou à son gérant / directeur de publication. Si elle appartient à l'agence web, au développeur ou à l'hébergeur (« réalisé par », « conception », « hébergé par »…), ne l'utilise pas. En cas de doute, ouvre la page des mentions légales et lis le contexte.
-- Une adresse présente seulement dans le code de la page (context vide : pas affichée aux visiteurs) n'est pas une adresse de contact publiée : ne l'utilise pas.
-- Jamais d'adresse devinée ou reconstituée.
-- Pas d'e-mail utilisable → status ecarte_sans_email, avec le téléphone et les liens Instagram/Facebook dans notes (Ali pourra appeler).
+Si le site ne donne rien, cherche ailleurs, dans cet ordre, et arrête-toi dès que tu as une bonne adresse :
+1. La page Facebook du resto (lien du site ou de la fiche Maps, sinon recherche « <nom> <ville> facebook ») : section « À propos » / « Intro », avec get_page_text.
+2. Le profil Instagram (bio et bouton « E-mail »/« Contact » quand il est visible).
+3. Une recherche Google dans Chrome : « "<nom du resto>" <ville> email » puis « "<nom du resto>" <ville> "@" ». Regarde les résultats (PagesJaunes, annuaires, articles, sites d'événements, Petit Futé…).
+4. Les mentions légales du site et le code de ses pages (les scripts ci-dessus remontent aussi les adresses présentes seulement dans le code, avec context vide).
+
+CHOISIR L'ADRESSE LA PLUS SUSCEPTIBLE DE RÉPONDRE (par ordre de préférence) :
+1. L'adresse nominative du patron / gérant (prenom@…, prenom.nom@…, ou son adresse perso utilisée pour le resto, ex. gérant cité dans les mentions légales) : c'est lui qui décide.
+2. L'adresse générique du resto sur son domaine : contact@, bonjour@, hello@, info@.
+3. L'adresse Gmail / Hotmail / Orange du resto (souvent lue par le patron lui-même).
+4. reservation@ / resa@ / events@ : en dernier recours (lue par l'équipe, rarement par le décideur).
+Une adresse trouvée seulement dans le code de la page est utilisable si elle appartient clairement au resto (même domaine que le site, nom du resto ou du gérant dedans, ou destinataire du formulaire de contact/réservation du resto).
+À ne jamais utiliser : l'adresse de l'agence web, du développeur ou de l'hébergeur (« réalisé par », « conception », « hébergé par »…), d'une plateforme de réservation ou de livraison (zenchef, thefork/lafourchette, guestonline, sevenrooms, resy, ubereats, deliveroo…), les noreply@ / no-reply@, dpo@ / rgpd@, et toute adresse devinée ou reconstituée (jamais de « contact@domaine » qu'on n'a pas vu écrit quelque part : une adresse qui rebondit abîme la réputation de la boîte d'envoi).
+Note toujours dans email_source où l'adresse a été trouvée (« page contact », « Facebook À propos », « code de la page réservation », « mentions légales, gérant », « PagesJaunes »…).
+Pas d'e-mail utilisable après tout ça → status ecarte_sans_email, avec le téléphone et les liens Instagram/Facebook dans notes (Ali pourra appeler).
 
 ÉTAPE 7 — CHOISIR ET RÉDIGER
-Classe les prospects avec e-mail (a_rediger d'abord, puis ceux du jour) par score décroissant et garde les N meilleurs (N = quota de l'étape 2). Pour chacun, écris un e-mail en français, vouvoiement, comme un bon commercial : précis, humain, court, sans en faire trop.
+Classe les prospects avec e-mail (a_rediger d'abord, puis ceux du jour) par score décroissant et garde les N meilleurs (N = quota de l'étape 2). Les restos qui répondent déjà en partie ont un score plus bas : garde-leur quand même au moins 2 places par jour s'il y en a. Pour chacun, écris un e-mail en français, vouvoiement, comme un bon commercial : précis, humain, court, sans en faire trop.
 Règles d'écriture (structure en 4 temps, toujours dans cet ordre) :
 1. Accroche vraie et flatteuse tirée de SES avis : une citation courte d'un avis positif récent, sa note, son nombre d'avis. Pas un mot sur Repère ici.
-2. Le constat chiffré, exact : « aucun de vos 40 derniers avis n'a reçu de réponse », « 34 de vos 40 derniers avis… ». S'il y a des avis négatifs récents sans réponse, mentionne-les avec tact en résumant le sujet (« l'attente entre les plats », « l'accueil »), sans citer l'auteur ni recopier un avis négatif mot pour mot. Une phrase courte sur pourquoi ça compte (ce sont ces avis-là que lisent les clients qui hésitent).
+2. Le constat chiffré, exact, ADAPTÉ À SA SITUATION :
+   - Ne répond pas (ou presque jamais) : « aucun de vos 40 derniers avis n'a reçu de réponse », « 34 de vos 40 derniers avis… ».
+   - Répond à une partie : reconnais-le d'abord (« vous faites partie des rares restaurants qui répondent à leurs clients »), puis le chiffre exact de ce qui reste (« 6 de vos 30 derniers avis sont pourtant restés sans réponse ») ou le décrochage (« depuis trois semaines, plus aucune réponse »). Angle : c'est le temps qui manque, pas l'envie.
+   - Répond à presque tout (1 à 3 sans réponse) : salue le travail, cite l'avis resté sans réponse s'il est négatif (résumé), et mets l'accent sur le temps gagné et le rapport du dimanche (rang dans le quartier, ce que ChatGPT dit d'eux), qu'ils n'ont pas aujourd'hui.
+   S'il y a des avis négatifs récents sans réponse, mentionne-les avec tact en résumant le sujet (« l'attente entre les plats », « l'accueil »), sans citer l'auteur ni recopier un avis négatif mot pour mot. Une phrase courte sur pourquoi ça compte (ce sont ces avis-là que lisent les clients qui hésitent).
 3. Repère présenté en une phrase, compréhensible en 2 secondes : « Je lance Repère, une app IA qui s'occupe de votre fiche Google Maps : elle rédige les réponses à vos avis dans votre ton, vous les validez d'un « OK » par WhatsApp, SMS ou e-mail, et chaque dimanche vous recevez un rapport (votre note, votre rang dans le quartier, ce que ChatGPT dit de vous). » Tu peux reformuler légèrement, sans rien ajouter qui ne soit pas vrai.
 4. L'offre, avec une seule action simple : le scan gratuit de leur fiche + les réponses prêtes pour leurs 10 derniers avis. « Je vous offre le scan de votre fiche, avec les réponses prêtes pour vos 10 derniers avis. Répondez simplement « oui », ou lancez le scan vous-même en 30 secondes : https://repere-avis.vercel.app/#scan »
 Forme :
 - 110 à 160 mots. Paragraphes de 1 à 3 phrases, séparés par une ligne vide. Vouvoiement. Pas de gras, pas de liste, pas d'emoji, pas de point d'exclamation, pas de superlatif sur Repère.
 - Aucun chiffre inventé, aucune promesse de classement, de clients en plus ou de chiffre d'affaires.
 - Signature : « Ali Sekkat » puis « Repère ».
-- Dernière ligne, séparée : « Votre adresse figure sur le site de votre restaurant. Si vous ne souhaitez plus recevoir de message de ma part, répondez simplement « stop ». »
+- Dernière ligne, séparée : « Votre adresse figure sur le site de votre restaurant. Si vous ne souhaitez plus recevoir de message de ma part, répondez simplement « stop ». » Adapte la source si l'adresse vient d'ailleurs (« sur la page Facebook de votre restaurant », « sur PagesJaunes »…).
 - Objet : court, personnel, sans majuscules partout ni mot racoleur, jamais trompeur. Registre : « Les avis du <nom> », « Vos 40 derniers avis Google », « Une question sur vos avis, <nom> ». Varie d'un mail à l'autre.
 - Relis chaque mail : chaque chiffre et chaque citation viennent de l'analyse de CE restaurant. Nom commercial long (« X – Restaurant Bar Villeurbanne ») → nom court. Pour un prospect a_rediger d'un jour précédent, les éléments sont dans notes ; s'ils ne suffisent pas, réanalyse la fiche.
 

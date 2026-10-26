@@ -169,12 +169,6 @@ function render() {
   }).join('') : '<tr><td colspan="8" class="muted">Aucun client pour l\'instant.</td></tr>';
 
   // Prospection : entonnoir
-  const count = (s) => prospects.filter((p) => p.status === s).length;
-  $('#funnel').innerHTML = [
-    ['Restos analysés', prospects.length], ['Avec e-mail', prospects.filter((p) => p.email).length],
-    ['Brouillons à envoyer', count('brouillon') + count('a_rediger')], ['Envoyés', sent.length],
-    ['Ont répondu', replied.length], ['Essais / clients', count('essai') + count('client')]
-  ].map(([l, v], i) => `<div class="kpi${i === 4 ? ' dark' : ''}"><div class="v num">${v}</div><div class="l">${l}</div></div>`).join('');
   const sel = $('#p-filter');
   if (sel.options.length === 1) sel.innerHTML += Object.entries(PSTAT).map(([k, [l]]) => `<option value="${k}">${l}</option>`).join('');
   renderProspects();
@@ -249,10 +243,22 @@ $('#mails').addEventListener('click', async (e) => {
   render();
 });
 
+// Entonnoir cliquable : chaque case filtre la liste en dessous
+const GROUPS = {
+  all: ['Restos analysés', () => true],
+  email: ['Avec e-mail', (p) => !!p.email],
+  draft: ['Brouillons à envoyer', (p) => ['brouillon', 'a_rediger'].includes(p.status)],
+  sent: ['Envoyés', (p) => ['envoye', 'a_repondu', 'essai', 'client', 'stop'].includes(p.status) && !!p.sent_at],
+  replied: ['Ont répondu', (p) => ['a_repondu', 'essai', 'client', 'stop'].includes(p.status)],
+  won: ['Essais / clients', (p) => ['essai', 'client'].includes(p.status)]
+};
+let pGroup = 'all';
 function renderProspects() {
+  $('#funnel').innerHTML = Object.entries(GROUPS).map(([k, [l, fn]]) =>
+    `<button type="button" class="kpi${k === pGroup ? ' dark' : ''}" data-group="${k}" aria-pressed="${k === pGroup}"><div class="v num">${prospects.filter(fn).length}</div><div class="l">${l}</div></button>`).join('');
   const f = $('#p-filter').value;
-  const list = f ? prospects.filter((p) => p.status === f) : prospects;
-  $('#p-count').textContent = `${list.length} restaurant(s)`;
+  const list = prospects.filter(GROUPS[pGroup][1]).filter((p) => !f || p.status === f);
+  $('#p-count').textContent = `${list.length} restaurant(s)` + (pGroup !== 'all' ? ` · ${GROUPS[pGroup][0].toLowerCase()}` : '');
   $('#prospects').innerHTML = list.map((p) => `<tr>
     <td class="num">${fmtDate(p.analysed_on)}</td><td>${esc(p.zone || '')}</td>
     <td>${p.maps_url ? `<a href="${esc(p.maps_url)}" target="_blank" rel="noopener">${esc(p.name)}</a>` : esc(p.name)}<br><span class="muted" style="font-size:13px">${esc(p.phone || '')}</span></td>
@@ -263,7 +269,11 @@ function renderProspects() {
     <td style="max-width:420px">${p.subject ? `<b style="font-weight:500">${esc(p.subject)}</b><br>` : ''}<span class="muted" style="font-size:14px">${esc((p.notes || '').slice(0, 220))}</span></td></tr>`).join('')
     || '<tr><td colspan="8" class="muted">Aucun restaurant.</td></tr>';
 }
-$('#p-filter').onchange = renderProspects;
+$('#p-filter').onchange = () => { if ($('#p-filter').value) pGroup = 'all'; renderProspects(); };
+$('#funnel').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-group]'); if (!b) return;
+  pGroup = b.dataset.group; $('#p-filter').value = ''; renderProspects();
+});
 $('#scans').addEventListener('change', async (e) => {
   const s = e.target.closest('[data-sid]'); if (!s) return;
   const { error } = await sb.from('scan_requests').update({ status: s.value }).eq('id', s.dataset.sid);
