@@ -102,34 +102,41 @@ const seen=new Set();
 Règles (CNIL, prospection B2B) :
 - Prends en priorité une adresse générique ou du domaine du resto (contact@, bonjour@, reservation@…), trouvée sur l'accueil ou la page contact.
 - Une adresse trouvée seulement dans les mentions légales n'est valable que si le contexte montre qu'elle appartient au restaurant, à sa société ou à son gérant / directeur de publication. Si elle appartient à l'agence web, au développeur ou à l'hébergeur (« réalisé par », « conception », « hébergé par »…), ne l'utilise pas. En cas de doute, ouvre la page des mentions légales et lis le contexte.
+- Une adresse présente seulement dans le code de la page (context vide : pas affichée aux visiteurs) n'est pas une adresse de contact publiée : ne l'utilise pas.
 - Jamais d'adresse devinée ou reconstituée.
 - Pas d'e-mail utilisable → status ecarte_sans_email, avec le téléphone et les liens Instagram/Facebook dans notes (Ali pourra appeler).
 
 ÉTAPE 7 — CHOISIR ET RÉDIGER
 Classe les prospects avec e-mail (a_rediger d'abord, puis ceux du jour) par score décroissant et garde les N meilleurs (N = quota de l'étape 2). Pour chacun, écris un e-mail en français, vouvoiement, comme un bon commercial : précis, humain, court, sans en faire trop.
-Règles d'écriture :
-- 90 à 140 mots. Paragraphes de 1 à 3 phrases. Pas de gras, pas de liste, pas d'emoji, pas de point d'exclamation en série.
-- Ouvre sur un fait vrai et flatteur tiré de SES avis (une citation courte d'un avis positif récent, sa note, son nombre d'avis), pas sur Repère.
-- Puis le constat chiffré, exact : « aucun de vos 40 derniers avis n'a reçu de réponse », « 34 de vos 40 derniers avis… ». S'il y a des avis négatifs récents sans réponse, mentionne-les avec tact, en résumant le sujet (« l'attente entre les plats », « l'accueil ») sans citer l'auteur ni recopier un avis négatif mot pour mot.
-- Une phrase sur pourquoi ça compte (les futurs clients lisent les réponses, surtout aux avis négatifs). Aucun chiffre inventé, aucune promesse de classement ou de chiffre d'affaires.
-- Une phrase sur Repère : « Repère rédige les réponses à vos avis dans votre ton ; vous les validez d'un “OK” par WhatsApp, SMS ou e-mail. »
-- Un seul appel à l'action, sans friction : « Pour que vous jugiez sur pièce, je vous prépare gratuitement les réponses à vos 10 derniers avis. Répondez simplement “oui” à ce mail. »
-- Signature : « Ali Sekkat / Repère / <adresse du site> ».
-- Dernière ligne, séparée : « Votre adresse figure sur le site de votre restaurant. Si vous ne souhaitez plus recevoir de message de ma part, répondez simplement “stop”. »
-- Objet : court, personnel, sans majuscules partout ni mot racoleur, et jamais trompeur. Exemples de registre : « Les avis du Café Lobut », « Vos 40 derniers avis Google », « Une question sur vos avis, <nom> ». Varie les formulations d'un mail à l'autre.
-- Relis chaque mail : chaque chiffre et chaque citation doivent venir de l'analyse de CE restaurant. Si le nom commercial est long (« X – Restaurant Bar Villeurbanne »), utilise le nom court. Pour un prospect a_rediger d'un jour précédent, les éléments sont dans notes ; s'ils ne suffisent pas, réanalyse la fiche.
+Règles d'écriture (structure en 4 temps, toujours dans cet ordre) :
+1. Accroche vraie et flatteuse tirée de SES avis : une citation courte d'un avis positif récent, sa note, son nombre d'avis. Pas un mot sur Repère ici.
+2. Le constat chiffré, exact : « aucun de vos 40 derniers avis n'a reçu de réponse », « 34 de vos 40 derniers avis… ». S'il y a des avis négatifs récents sans réponse, mentionne-les avec tact en résumant le sujet (« l'attente entre les plats », « l'accueil »), sans citer l'auteur ni recopier un avis négatif mot pour mot. Une phrase courte sur pourquoi ça compte (ce sont ces avis-là que lisent les clients qui hésitent).
+3. Repère présenté en une phrase, compréhensible en 2 secondes : « Je lance Repère, une app IA qui s'occupe de votre fiche Google Maps : elle rédige les réponses à vos avis dans votre ton, vous les validez d'un « OK » par WhatsApp, SMS ou e-mail, et chaque dimanche vous recevez un rapport (votre note, votre rang dans le quartier, ce que ChatGPT dit de vous). » Tu peux reformuler légèrement, sans rien ajouter qui ne soit pas vrai.
+4. L'offre, avec une seule action simple : le scan gratuit de leur fiche + les réponses prêtes pour leurs 10 derniers avis. « Je vous offre le scan de votre fiche, avec les réponses prêtes pour vos 10 derniers avis. Répondez simplement « oui », ou lancez le scan vous-même en 30 secondes : https://repere-avis.vercel.app/#scan »
+Forme :
+- 110 à 160 mots. Paragraphes de 1 à 3 phrases, séparés par une ligne vide. Vouvoiement. Pas de gras, pas de liste, pas d'emoji, pas de point d'exclamation, pas de superlatif sur Repère.
+- Aucun chiffre inventé, aucune promesse de classement, de clients en plus ou de chiffre d'affaires.
+- Signature : « Ali Sekkat » puis « Repère ».
+- Dernière ligne, séparée : « Votre adresse figure sur le site de votre restaurant. Si vous ne souhaitez plus recevoir de message de ma part, répondez simplement « stop ». »
+- Objet : court, personnel, sans majuscules partout ni mot racoleur, jamais trompeur. Registre : « Les avis du <nom> », « Vos 40 derniers avis Google », « Une question sur vos avis, <nom> ». Varie d'un mail à l'autre.
+- Relis chaque mail : chaque chiffre et chaque citation viennent de l'analyse de CE restaurant. Nom commercial long (« X – Restaurant Bar Villeurbanne ») → nom court. Pour un prospect a_rediger d'un jour précédent, les éléments sont dans notes ; s'ils ne suffisent pas, réanalyse la fiche.
 
-Exemple de ton (Café Lobut, Villeurbanne — ne pas recopier tel quel) :
+Exemple (Café Lobut, Villeurbanne — déjà préparé, ne pas le refaire ni le recopier tel quel) :
 Objet : Les 1 000 avis du Café Lobut
 « Bonjour,
-Un client vous a écrit la semaine dernière que le Café Lobut était “le meilleur restaurant de Lyon et ses alentours”. Avec 4,5 sur plus de 1 000 avis, il n'est pas le seul à le penser.
-En parcourant votre fiche Google, j'ai vu qu'aucun de vos 40 derniers avis n'avait reçu de réponse, dont trois retours plus mitigés ce mois-ci sur l'attente et l'accueil. Les clients qui hésitent lisent surtout ces avis-là, et la façon dont on y répond.
-Repère rédige les réponses à vos avis dans votre ton ; vous les validez d'un “OK” par WhatsApp, SMS ou e-mail, en dix secondes.
-Pour que vous jugiez sur pièce, je vous prépare gratuitement les réponses à vos 10 derniers avis. Répondez simplement “oui” à ce mail.
-Ali Sekkat
-Repère — <adresse du site>
 
-Votre adresse figure sur le site de votre restaurant. Si vous ne souhaitez plus recevoir de message de ma part, répondez simplement “stop”. »
+Un client vous a écrit la semaine dernière que le Café Lobut était « le meilleur restaurant de Lyon et ses alentours ». Avec 4,5 sur plus de 1 000 avis, il n'est pas le seul à le penser.
+
+Pourtant, aucun de vos 40 derniers avis n'a reçu de réponse, dont trois retours plus mitigés ce mois-ci sur l'attente et l'accueil. Ce sont justement ceux que lisent les clients qui hésitent.
+
+Je lance Repère, une app IA qui s'occupe de votre fiche Google Maps : elle rédige les réponses à vos avis dans votre ton, vous les validez d'un « OK » par WhatsApp, SMS ou e-mail, et chaque dimanche vous recevez un rapport (votre note, votre rang dans le quartier, ce que ChatGPT dit de vous).
+
+Je vous offre le scan de votre fiche, avec les réponses prêtes pour vos 10 derniers avis. Répondez simplement « oui », ou lancez le scan vous-même en 30 secondes : https://repere-avis.vercel.app/#scan
+
+Ali Sekkat
+Repère
+
+Votre adresse figure sur le site de votre restaurant. Si vous ne souhaitez plus recevoir de message de ma part, répondez simplement « stop ». »
 
 ÉTAPE 8 — DÉPOSER LES MAILS DANS L'ADMIN
 Enregistre chaque mail en base (insert pour un nouveau prospect, update pour un a_rediger existant) : status = brouillon, subject, body = le texte complet en texte simple (lignes vides entre les paragraphes), drafted_on = current_date, et dans notes une ligne qui dit pourquoi ce resto (ce qui a été mis en avant) et d'où vient l'adresse. Il apparaît aussitôt dans l'onglet « Mails à envoyer » de l'admin. Les prospects valables non retenus aujourd'hui (au-delà du quota) restent ou passent en a_rediger, avec dans notes les éléments utiles au mail (citation positive, négatifs résumés) : ils seront prioritaires demain.
