@@ -271,6 +271,7 @@ button,input,textarea{font:inherit;color:inherit}
         <li><a class="link" href="#comment">Comment ça marche</a></li>
         <li><a class="link" href="#rapport">Le rapport</a></li>
         <li><a class="link" href="#tarif">Tarif</a></li>
+        <li><a class="link" href="/connexion.html">Connexion</a></li>
       </ul>
     </nav>
     <h1 class="display"><span>Vos avis</span><span>répondus</span></h1>
@@ -376,7 +377,7 @@ button,input,textarea{font:inherit;color:inherit}
     <p class="what">Une réponse à chaque avis Google, validée d'un OK sur WhatsApp. Une alerte immédiate sur chaque avis négatif. Le rapport du dimanche : note, rang dans le quartier, citations par ChatGPT et trois actions. Un établissement, sans engagement, 14 jours d'essai.</p>
     <div class="plan-foot">
       <div class="price"><span class="amount num">39 €</span><span class="per">par mois, HT</span></div>
-      <a class="button light" href="#scan">Essayer 14 jours</a>
+      <a class="button light" href="/inscription.html">Essayer 14 jours</a>
     </div>
   </div>
 </section>
@@ -453,9 +454,18 @@ document.getElementById('cards').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   document.querySelectorAll('.card').forEach(c=>{const on=c.contains(b);c.classList.toggle('open',on);c.querySelector('button').setAttribute('aria-expanded',on)});
 });
-document.getElementById('scanform').addEventListener('submit',e=>{
-  e.preventDefault();const f=new FormData(e.target);const t=document.getElementById('thanks');
-  t.textContent=`C'est parti pour ${f.get('resto')}. Le scan arrive à ${f.get('email')} dans quelques minutes.`;t.hidden=false;e.target.hidden=true;
+</script>
+<script type="module">
+// Demande de scan gratuit : enregistrée dans Supabase (table scan_requests), traitée par Repère.
+import { sb } from '/assets/supa.js';
+const form=document.getElementById('scanform');
+form.addEventListener('submit',async e=>{
+  e.preventDefault();const f=new FormData(form);const t=document.getElementById('thanks');
+  const btn=document.querySelector('button[form=scanform]');btn.disabled=true;
+  const {error}=await sb.from('scan_requests').insert({restaurant:f.get('resto'),city:f.get('ville'),email:String(f.get('email')).trim().toLowerCase()});
+  btn.disabled=false;
+  if(error){t.textContent="La demande n'a pas pu partir. Réessayez dans un instant.";t.hidden=false;return;}
+  t.textContent=`C'est noté pour ${f.get('resto')}. Votre scan arrive à ${f.get('email')} sous 24 heures.`;t.hidden=false;form.hidden=true;btn.hidden=true;
 });
 </script>
 </body>

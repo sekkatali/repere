@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connexion · Repère</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@900&family=Red+Hat+Text:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+<div class="auth">
+  <aside class="side">
+    <a href="/" class="display" style="font-size:24px;text-decoration:none">Repère</a>
+    <div>
+      <p class="display">Vos avis répondus</p>
+      <p style="margin-top:20px">Connectez-vous avec votre adresse e-mail. Pas de mot de passe : on vous envoie un lien, vous cliquez, c'est ouvert.</p>
+    </div>
+    <p style="font-size:15px">Pas encore de compte ? <a href="/inscription.html" style="color:inherit">Essayer 14 jours gratuitement</a></p>
+  </aside>
+  <main class="main">
+    <div class="card">
+      <h1 class="display">Connexion</h1>
+      <p>Clients et administrateur, même porte d'entrée.</p>
+      <form class="form" id="f">
+        <label class="field">Adresse e-mail
+          <input type="email" name="email" required autocomplete="email" placeholder="vous@restaurant.fr">
+        </label>
+        <button class="btn" type="submit">Recevoir mon lien de connexion</button>
+        <p class="msg hidden" id="msg" role="status"></p>
+      </form>
+    </div>
+  </main>
+</div>
+<script type="module">
+import { sb, $, showMsg } from '/assets/supa.js';
+const { data: { session } } = await sb.auth.getSession();
+if (session) location.href = '/espace.html';
+$('#f').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = new FormData(e.target).get('email').trim().toLowerCase();
+  const btn = e.target.querySelector('button'); btn.disabled = true;
+  const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false, emailRedirectTo: location.origin + '/espace.html' } });
+  btn.disabled = false;
+  if (error) {
+    const unknown = /signups not allowed|not found|otp_disabled/i.test(error.message);
+    showMsg($('#msg'), unknown ? "Aucun compte n'existe avec cette adresse. Créez-en un depuis la page d'inscription." : 'Erreur : ' + error.message, 'err');
+    return;
+  }
+  showMsg($('#msg'), `Lien envoyé à ${email}. Ouvrez-le depuis ce même navigateur. Pensez à regarder dans les spams.`);
+});
+</script>
+</body>
+</html>

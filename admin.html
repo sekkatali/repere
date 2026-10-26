@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin · Repère</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@900&family=Red+Hat+Text:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="wordmark" href="/admin.html">Repère · Admin</a>
+  <nav>
+    <a href="/espace.html?vue=client">Mon espace client</a>
+    <span id="who" style="color:#e6c9cb;font-size:14px"></span>
+    <button type="button" id="logout">Déconnexion</button>
+  </nav>
+</header>
+
+<div class="wrap">
+  <div class="loading" id="loading">Chargement…</div>
+  <div id="denied" class="hidden empty">Cette page est réservée à l'administrateur. <a href="/espace.html">Aller à mon espace</a></div>
+
+  <section id="app" class="hidden">
+    <div class="page-head">
+      <div><h1 class="display">Tableau de bord</h1><p class="muted" id="today"></p></div>
+      <button class="btn alt" id="refresh" type="button">Actualiser</button>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi dark"><div class="v num" id="k-mrr">0 €</div><div class="l">revenu mensuel récurrent (HT)</div></div>
+      <div class="kpi"><div class="v num" id="k-active">0</div><div class="l">clients abonnés</div></div>
+      <div class="kpi"><div class="v num" id="k-trial">0</div><div class="l">essais en cours</div></div>
+      <div class="kpi"><div class="v num" id="k-todo">0</div><div class="l">avis clients à valider</div></div>
+      <div class="kpi"><div class="v num" id="k-sent">0</div><div class="l">mails de prospection envoyés</div></div>
+      <div class="kpi"><div class="v num" id="k-rate">0 %</div><div class="l">taux de réponse prospection</div></div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button role="tab" data-tab="clients" aria-selected="true">Clients</button>
+      <button role="tab" data-tab="prospects" aria-selected="false">Prospection</button>
+      <button role="tab" data-tab="scans" aria-selected="false">Demandes de scan</button>
+      <button role="tab" data-tab="queue" aria-selected="false">Avis en attente</button>
+      <button role="tab" data-tab="runs" aria-selected="false">Journal de l'agent</button>
+    </div>
+
+    <div data-panel="clients">
+      <div class="panel tablebox">
+        <table><thead><tr><th>Établissement</th><th>Client</th><th>Ville</th><th>Statut</th><th>Échéance</th><th>Validation</th><th>À valider</th><th>Inscrit le</th></tr></thead><tbody id="clients"></tbody></table>
+      </div>
+    </div>
+
+    <div data-panel="prospects" class="hidden">
+      <div class="kpis" id="funnel"></div>
+      <div class="panel">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+          <label class="field" style="grid-template-columns:auto auto;align-items:center;gap:8px">Statut
+            <select id="p-filter" style="width:auto;min-height:38px"><option value="">Tous</option></select>
+          </label>
+          <span class="muted" id="p-count"></span>
+        </div>
+        <div class="tablebox"><table><thead><tr><th>Date</th><th>Zone</th><th>Restaurant</th><th>Score</th><th>Sans réponse</th><th>E-mail</th><th>Statut</th><th>Objet / notes</th></tr></thead><tbody id="prospects"></tbody></table></div>
+      </div>
+    </div>
+
+    <div data-panel="scans" class="hidden">
+      <div class="panel tablebox"><table><thead><tr><th>Reçue le</th><th>Restaurant</th><th>Ville</th><th>E-mail</th><th>Statut</th></tr></thead><tbody id="scans"></tbody></table></div>
+    </div>
+    <div data-panel="queue" class="hidden"><div id="queue"></div></div>
+
+    <div data-panel="runs" class="hidden">
+      <div class="panel tablebox"><table><thead><tr><th>Date</th><th>Zones</th><th>Fiches</th><th>Avec e-mail</th><th>Brouillons</th><th>Envoyés</th><th>Réponses</th><th>Problèmes</th></tr></thead><tbody id="runs"></tbody></table></div>
+    </div>
+  </section>
+</div>
+
+<dialog id="dlg">
+  <div class="dh"><h3 id="d-title"></h3><button class="btn ghost" style="color:#fff" type="button" data-close>Fermer</button></div>
+  <div class="db">
+    <table><tbody id="d-info"></tbody></table>
+    <label class="field">Statut de l'abonnement
+      <select id="d-plan"><option value="trial">Essai gratuit</option><option value="active">Abonné</option><option value="past_due">Paiement en retard</option><option value="canceled">Résilié</option></select>
+    </label>
+    <form class="form" id="d-review" style="background:#fff;padding:16px">
+      <p style="font-weight:500">Ajouter un avis et la réponse proposée</p>
+      <div class="row2">
+        <label class="field">Auteur<input type="text" name="author"></label>
+        <label class="field">Étoiles<select name="stars"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></label>
+      </div>
+      <label class="field">Date de l'avis<input type="text" name="date" placeholder="2026-10-25"></label>
+      <label class="field">Texte de l'avis<textarea name="text" rows="3"></textarea></label>
+      <label class="field">Réponse proposée<textarea name="reply" rows="4" required></textarea></label>
+      <button class="btn" type="submit">Ajouter à valider par le client</button>
+      <p class="msg hidden" id="d-msg"></p>
+    </form>
+  </div>
+</dialog>
+
+<script type="module">
+import { sb, $, $$, esc, stars, fmtDate, euros, requireUser, logout, PLAN, daysLeft, PRICE } from '/assets/supa.js';
+
+const ctx = await requireUser(); if (!ctx) throw 0;
+$('#who').textContent = ctx.user.email;
+$('#logout').onclick = logout;
+$('#loading').classList.add('hidden');
+if (ctx.profile?.role !== 'admin') { $('#denied').classList.remove('hidden'); throw 0; }
+$('#app').classList.remove('hidden');
+$('#today').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+const PSTAT = {
+  a_rediger: ['À rédiger', 'warn'], brouillon: ['Brouillon créé', 'warn'], envoye: ['Envoyé', 'off'], a_repondu: ['A répondu', 'red'],
+  essai: ['Essai', 'ok'], client: ['Client', 'ok'], stop: ['STOP', 'off'],
+  ecarte_repond: ['Écarté : répond déjà', 'off'], ecarte_sans_email: ['Écarté : pas d\'e-mail', 'off'], ecarte_chaine: ['Écarté : chaîne ou fermé', 'off']
+};
+let restos = [], reviews = [], prospects = [], runs = [], scans = [];
+
+$$('[role=tab]').forEach((b) => b.onclick = () => {
+  $$('[role=tab]').forEach((x) => x.setAttribute('aria-selected', x === b));
+  $$('[data-panel]').forEach((p) => p.classList.toggle('hidden', p.dataset.panel !== b.dataset.tab));
+});
+
+async function load() {
+  const [a, b, c, d, e] = await Promise.all([
+    sb.from('restaurants').select('*, profiles(email)').order('created_at', { ascending: false }),
+    sb.from('reviews').select('*').order('created_at', { ascending: false }),
+    sb.from('prospects').select('*').order('analysed_on', { ascending: false }).order('score', { ascending: false }),
+    sb.from('agent_runs').select('*').order('run_on', { ascending: false }).limit(60),
+    sb.from('scan_requests').select('*').order('created_at', { ascending: false }).limit(200)
+  ]);
+  restos = a.data || []; reviews = b.data || []; prospects = c.data || []; runs = d.data || []; scans = e.data || [];
+  render();
+}
+$('#refresh').onclick = load;
+
+function render() {
+  const active = restos.filter((r) => r.plan_status === 'active');
+  const trial = restos.filter((r) => r.plan_status === 'trial' && daysLeft(r.trial_ends_at) > 0);
+  const todo = reviews.filter((r) => r.status === 'a_valider');
+  const sent = prospects.filter((p) => ['envoye', 'a_repondu', 'essai', 'client', 'stop'].includes(p.status));
+  const replied = prospects.filter((p) => ['a_repondu', 'essai', 'client', 'stop'].includes(p.status));
+  $('#k-mrr').textContent = euros(active.length * PRICE);
+  $('#k-active').textContent = active.length;
+  $('#k-trial').textContent = trial.length;
+  $('#k-todo').textContent = todo.length;
+  $('#k-sent').textContent = sent.length;
+  $('#k-rate').textContent = (sent.length ? Math.round((replied.length / sent.length) * 1000) / 10 : 0).toLocaleString('fr-FR') + ' %';
+
+  // Clients
+  const todoBy = (id) => todo.filter((r) => r.restaurant_id === id).length;
+  $('#clients').innerHTML = restos.length ? restos.map((r) => {
+    const [l, k] = PLAN[r.plan_status] || ['—', 'off'];
+    const due = r.plan_status === 'trial' ? `fin d'essai ${fmtDate(r.trial_ends_at)}` : fmtDate(r.current_period_end);
+    const ch = [r.validate_whatsapp && 'WhatsApp', r.validate_sms && 'SMS', r.validate_email && 'E-mail'].filter(Boolean).join(', ');
+    return `<tr class="click" data-id="${r.id}"><td><b style="font-weight:500">${esc(r.name)}</b></td><td>${esc(r.profiles?.email || '')}</td><td>${esc(r.city || '')}</td>
+      <td><span class="tag ${k}">${l}</span></td><td class="num">${due}</td><td>${esc(ch)}</td><td class="num">${todoBy(r.id) || ''}</td><td class="num">${fmtDate(r.created_at)}</td></tr>`;
+  }).join('') : '<tr><td colspan="8" class="muted">Aucun client pour l\'instant.</td></tr>';
+
+  // Prospection : entonnoir
+  const count = (s) => prospects.filter((p) => p.status === s).length;
+  $('#funnel').innerHTML = [
+    ['Restos analysés', prospects.length], ['Avec e-mail', prospects.filter((p) => p.email).length],
+    ['Brouillons à envoyer', count('brouillon') + count('a_rediger')], ['Envoyés', sent.length],
+    ['Ont répondu', replied.length], ['Essais / clients', count('essai') + count('client')]
+  ].map(([l, v], i) => `<div class="kpi${i === 4 ? ' dark' : ''}"><div class="v num">${v}</div><div class="l">${l}</div></div>`).join('');
+  const sel = $('#p-filter');
+  if (sel.options.length === 1) sel.innerHTML += Object.entries(PSTAT).map(([k, [l]]) => `<option value="${k}">${l}</option>`).join('');
+  renderProspects();
+
+  // File d'avis
+  $('#queue').innerHTML = todo.length ? todo.map((r) => {
+    const resto = restos.find((x) => x.id === r.restaurant_id);
+    return `<article class="review"><div class="meta"><b style="font-weight:500;color:var(--ink)">${esc(resto?.name || '')}</b><span class="stars">${stars(r.stars)}</span><span>${fmtDate(r.review_date || r.created_at)}</span></div>
+      <p class="said">${esc(r.text || '')}</p><div class="reply"><b>Réponse proposée</b>${esc(r.proposed_reply || '')}</div></article>`;
+  }).join('') : '<div class="empty">Aucun avis en attente de validation.</div>';
+
+  // Demandes de scan
+  const SST = { nouveau: 'À faire', envoye: 'Scan envoyé', client: 'Devenu client' };
+  $('#scans').innerHTML = scans.length ? scans.map((x) => `<tr><td class="num">${fmtDate(x.created_at)}</td><td>${esc(x.restaurant)}</td><td>${esc(x.city || '')}</td>
+    <td><a href="mailto:${esc(x.email)}">${esc(x.email)}</a></td>
+    <td><select data-sid="${x.id}" style="min-height:34px;padding:2px 6px;font-size:14px;width:auto">${Object.entries(SST).map(([k, l]) => `<option value="${k}"${k === x.status ? ' selected' : ''}>${l}</option>`).join('')}</select></td></tr>`).join('')
+    : '<tr><td colspan="5" class="muted">Aucune demande pour l\'instant.</td></tr>';
+
+  // Journal
+  $('#runs').innerHTML = runs.length ? runs.map((r) => `<tr><td class="num">${fmtDate(r.run_on)}</td><td>${esc(r.zones || '')}</td><td class="num">${r.analysed ?? ''}</td><td class="num">${r.with_email ?? ''}</td><td class="num">${r.drafts ?? ''}</td><td class="num">${r.sent_since ?? ''}</td><td class="num">${r.replies_since ?? ''}</td><td>${esc(r.problems || '')}</td></tr>`).join('')
+    : '<tr><td colspan="8" class="muted">L\'agent n\'a pas encore tourné.</td></tr>';
+}
+
+function renderProspects() {
+  const f = $('#p-filter').value;
+  const list = f ? prospects.filter((p) => p.status === f) : prospects;
+  $('#p-count').textContent = `${list.length} restaurant(s)`;
+  $('#prospects').innerHTML = list.map((p) => `<tr>
+    <td class="num">${fmtDate(p.analysed_on)}</td><td>${esc(p.zone || '')}</td>
+    <td>${p.maps_url ? `<a href="${esc(p.maps_url)}" target="_blank" rel="noopener">${esc(p.name)}</a>` : esc(p.name)}<br><span class="muted" style="font-size:13px">${esc(p.phone || '')}</span></td>
+    <td class="num"><b style="font-weight:500">${p.score ?? ''}</b></td>
+    <td class="num">${p.unanswered ?? '?'} / ${p.reviews_read ?? '?'}</td>
+    <td>${esc(p.email || '')}</td>
+    <td><select data-pid="${p.id}" style="min-height:34px;padding:2px 6px;font-size:14px;width:auto">${Object.entries(PSTAT).map(([k, [l]]) => `<option value="${k}"${k === p.status ? ' selected' : ''}>${l}</option>`).join('')}</select></td>
+    <td style="max-width:420px">${p.subject ? `<b style="font-weight:500">${esc(p.subject)}</b><br>` : ''}<span class="muted" style="font-size:14px">${esc((p.notes || '').slice(0, 220))}</span></td></tr>`).join('')
+    || '<tr><td colspan="8" class="muted">Aucun restaurant.</td></tr>';
+}
+$('#p-filter').onchange = renderProspects;
+$('#scans').addEventListener('change', async (e) => {
+  const s = e.target.closest('[data-sid]'); if (!s) return;
+  const { error } = await sb.from('scan_requests').update({ status: s.value }).eq('id', s.dataset.sid);
+  if (error) alert(error.message);
+});
+$('#prospects').addEventListener('change', async (e) => {
+  const s = e.target.closest('[data-pid]'); if (!s) return;
+  const { error } = await sb.from('prospects').update({ status: s.value }).eq('id', s.dataset.pid);
+  if (error) return alert(error.message);
+  prospects.find((p) => p.id === s.dataset.pid).status = s.value; render();
+});
+
+// Fiche client
+let current = null;
+$('#clients').addEventListener('click', (e) => {
+  const tr = e.target.closest('tr[data-id]'); if (!tr) return;
+  current = restos.find((r) => r.id === tr.dataset.id);
+  $('#d-title').textContent = current.name;
+  $('#d-plan').value = current.plan_status;
+  $('#d-info').innerHTML = [
+    ['Client', current.profiles?.email], ['Ville', current.city], ['Téléphone', current.phone], ['E-mail de validation', current.notify_email],
+    ['Canaux', [current.validate_whatsapp && 'WhatsApp', current.validate_sms && 'SMS', current.validate_email && 'E-mail'].filter(Boolean).join(', ')],
+    ['Ton', current.tone === 'tu' ? 'Tutoiement' : 'Vouvoiement'], ['Signature', current.signature], ['Publication auto 4-5★', current.auto_publish_positive ? 'Oui' : 'Non'],
+    ['Fiche Google', current.google_maps_url ? `<a href="${esc(current.google_maps_url)}" target="_blank" rel="noopener">Ouvrir</a>` : ''],
+    ['Stripe', current.stripe_customer_id || '—']
+  ].map(([k, v]) => `<tr><td class="muted">${k}</td><td>${k === 'Fiche Google' ? v : esc(v || '—')}</td></tr>`).join('');
+  $('#d-msg').classList.add('hidden'); $('#d-review').reset();
+  $('#dlg').showModal();
+});
+$$('[data-close]').forEach((b) => b.onclick = () => $('#dlg').close());
+$('#d-plan').onchange = async (e) => {
+  const { error } = await sb.from('restaurants').update({ plan_status: e.target.value }).eq('id', current.id);
+  if (error) return alert(error.message);
+  current.plan_status = e.target.value; render();
+};
+$('#d-review').addEventListener('submit', async (e) => {
+  e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
+  const { data, error } = await sb.from('reviews').insert({ restaurant_id: current.id, author: d.author || null, stars: +d.stars,
+    review_date: /^\d{4}-\d{2}-\d{2}$/.test(d.date) ? d.date : null, text: d.text || null, proposed_reply: d.reply }).select().single();
+  const m = $('#d-msg');
+  if (error) { m.textContent = error.message; m.className = 'msg err'; return; }
+  reviews.unshift(data); render(); e.target.reset();
+  m.textContent = 'Ajouté. Le client le voit dans « À valider ».'; m.className = 'msg ok';
+});
+
+await load();
+</script>
+</body>
+</html>

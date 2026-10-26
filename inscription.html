@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inscription · Repère</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@900&family=Red+Hat+Text:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+<div class="auth">
+  <aside class="side">
+    <a href="/" class="display" style="font-size:24px;text-decoration:none">Repère</a>
+    <div>
+      <p class="display">39 € par mois</p>
+      <p style="margin-top:20px">Une réponse à chaque avis Google, validée par WhatsApp, SMS ou e-mail. Le rapport du dimanche. Sans engagement.</p>
+    </div>
+    <p style="font-size:15px">Déjà client ? <a href="/connexion.html" style="color:inherit">Se connecter</a></p>
+  </aside>
+  <main class="main">
+    <div class="card">
+      <h1 class="display">Votre espace</h1>
+      <p>Votre espace client est créé automatiquement avec votre adresse e-mail.</p>
+      <form class="form" id="f">
+        <label class="field">Nom du restaurant
+          <input type="text" name="restaurant_name" required autocomplete="organization">
+        </label>
+        <div class="row2">
+          <label class="field">Ville ou arrondissement
+            <input type="text" name="city" required>
+          </label>
+          <label class="field">Téléphone <small>pour WhatsApp ou SMS</small>
+            <input type="tel" name="phone" autocomplete="tel">
+          </label>
+        </div>
+        <label class="field">Adresse e-mail
+          <input type="email" name="email" required autocomplete="email">
+        </label>
+        <label class="field">Lien de votre fiche Google Maps <small>facultatif</small>
+          <input type="url" name="google_maps_url" placeholder="https://maps.google.com/…">
+        </label>
+        <fieldset style="border:0;padding:0;margin:0">
+          <legend style="font-weight:500;font-size:15px">Comment voulez-vous commencer ?</legend>
+          <div class="choice">
+            <label><span><input type="radio" name="mode" value="trial" checked> <b style="font-weight:500">Essai gratuit</b></span><span class="muted" style="font-size:14px">14 jours, sans carte</span></label>
+            <label><span><input type="radio" name="mode" value="pay"> <b style="font-weight:500">Payer maintenant</b></span><span class="muted" style="font-size:14px">39 € HT/mois, par carte</span></label>
+          </div>
+        </fieldset>
+        <button class="btn" type="submit" id="go">Créer mon espace</button>
+        <p class="msg hidden" id="msg" role="status"></p>
+        <p class="muted" style="font-size:13px">En continuant, vous acceptez de recevoir les e-mails liés au service. Vos données servent uniquement à faire fonctionner Repère.</p>
+      </form>
+    </div>
+  </main>
+</div>
+<script type="module">
+import { sb, $, showMsg } from '/assets/supa.js';
+const f = $('#f');
+f.addEventListener('change', () => { $('#go').textContent = f.mode.value === 'pay' ? 'Payer et créer mon espace' : 'Créer mon espace'; });
+f.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const d = Object.fromEntries(new FormData(f));
+  d.email = d.email.trim().toLowerCase();
+  const btn = $('#go'); btn.disabled = true;
+  if (d.mode === 'pay') {
+    try {
+      const r = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'Paiement indisponible');
+      location.href = j.url; return;
+    } catch (err) { btn.disabled = false; showMsg($('#msg'), err.message + ". Vous pouvez commencer par l'essai gratuit.", 'err'); return; }
+  }
+  const { error } = await sb.auth.signInWithOtp({
+    email: d.email,
+    options: { shouldCreateUser: true, emailRedirectTo: location.origin + '/espace.html',
+      data: { restaurant_name: d.restaurant_name.trim(), city: d.city.trim(), phone: (d.phone || '').trim(), google_maps_url: (d.google_maps_url || '').trim() } }
+  });
+  btn.disabled = false;
+  if (error) { showMsg($('#msg'), 'Erreur : ' + error.message, 'err'); return; }
+  f.querySelectorAll('input,button').forEach((el) => el.disabled = true);
+  showMsg($('#msg'), `C'est presque fini : ouvrez le lien envoyé à ${d.email} pour accéder à votre espace. Votre essai de 14 jours commence à ce moment-là.`);
+});
+</script>
+</body>
+</html>

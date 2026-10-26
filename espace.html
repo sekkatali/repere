@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mon espace · Repère</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@900&family=Red+Hat+Text:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="wordmark" href="/espace.html">Repère</a>
+  <nav>
+    <select id="resto-pick" class="hidden" aria-label="Établissement"></select>
+    <a href="/admin.html" id="admin-link" class="hidden">Admin</a>
+    <span id="who" class="muted" style="color:#e6c9cb;font-size:14px"></span>
+    <button type="button" id="logout">Déconnexion</button>
+  </nav>
+</header>
+
+<div class="wrap">
+  <div class="loading" id="loading">Chargement de votre espace…</div>
+
+  <!-- Aucun établissement : création -->
+  <section id="no-resto" class="hidden">
+    <div class="page-head"><div><h1 class="display">Bienvenue</h1><p>Dites-nous quel établissement suivre et votre essai de 14 jours démarre.</p></div></div>
+    <form class="panel form" id="add-first" style="max-width:560px">
+      <label class="field">Nom du restaurant<input type="text" name="name" required></label>
+      <label class="field">Ville ou arrondissement<input type="text" name="city" required></label>
+      <label class="field">Lien de la fiche Google Maps <small>facultatif</small><input type="url" name="maps"></label>
+      <button class="btn" type="submit">Démarrer</button>
+      <p class="msg hidden" id="add-msg"></p>
+    </form>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="page-head">
+      <div>
+        <h1 class="display" id="r-name"></h1>
+        <p class="muted" id="r-sub"></p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="billing-cta"></div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi dark"><div class="v num" id="k-todo">0</div><div class="l">avis à valider</div></div>
+      <div class="kpi"><div class="v num" id="k-done">0</div><div class="l">réponses validées</div></div>
+      <div class="kpi"><div class="v num" id="k-rating">—</div><div class="l">note Google</div></div>
+      <div class="kpi"><div class="v num" id="k-rank">—</div><div class="l" id="k-rank-l">rang dans le quartier</div></div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button role="tab" data-tab="todo" aria-selected="true">À valider</button>
+      <button role="tab" data-tab="history" aria-selected="false">Historique</button>
+      <button role="tab" data-tab="reports" aria-selected="false">Rapports du dimanche</button>
+      <button role="tab" data-tab="settings" aria-selected="false">Réglages</button>
+      <button role="tab" data-tab="billing" aria-selected="false">Abonnement</button>
+    </div>
+
+    <div data-panel="todo"><div id="todo-list"></div></div>
+    <div data-panel="history" class="hidden"><div class="panel tablebox"><table><thead><tr><th>Date</th><th>Note</th><th>Avis</th><th>Réponse</th><th>Statut</th></tr></thead><tbody id="hist"></tbody></table></div></div>
+    <div data-panel="reports" class="hidden"><div id="reports"></div></div>
+
+    <div data-panel="settings" class="hidden">
+      <form id="settings" class="cols">
+        <div>
+          <div class="panel">
+            <h2>Comment valider les réponses</h2>
+            <p class="muted" style="margin-bottom:14px">Choisissez un ou plusieurs canaux. Vous recevez chaque réponse proposée et vous validez d'un « OK ».</p>
+            <label class="switch"><span><b>WhatsApp</b><span class="sub">Répondez OK dans la conversation</span></span><input type="checkbox" name="wa"></label>
+            <label class="switch"><span><b>SMS</b><span class="sub">Répondez OK par SMS</span></span><input type="checkbox" name="sms"></label>
+            <label class="switch"><span><b>E-mail</b><span class="sub">Un bouton Valider dans le mail</span></span><input type="checkbox" name="mail"></label>
+            <div class="row2" style="margin-top:16px">
+              <label class="field">Téléphone (WhatsApp / SMS)<input type="tel" name="phone"></label>
+              <label class="field">E-mail de validation<input type="email" name="notify_email"></label>
+            </div>
+          </div>
+          <div class="panel">
+            <h2>Style des réponses</h2>
+            <div class="form">
+              <div class="row2">
+                <label class="field">Vouvoiement ou tutoiement
+                  <select name="tone"><option value="vous">Vouvoiement</option><option value="tu">Tutoiement</option></select>
+                </label>
+                <label class="field">Signature<input type="text" name="signature" placeholder="L'équipe de …"></label>
+              </div>
+              <label class="switch"><span><b>Publier seuls les avis 4 et 5 étoiles</b><span class="sub">Les remerciements partent sans validation ; les avis négatifs attendent toujours votre OK.</span></span><input type="checkbox" name="auto"></label>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="panel">
+            <h2>Établissement</h2>
+            <div class="form">
+              <label class="field">Nom<input type="text" name="name" required></label>
+              <label class="field">Ville ou arrondissement<input type="text" name="city"></label>
+              <label class="field">Fiche Google Maps<input type="url" name="maps"></label>
+            </div>
+          </div>
+          <div class="panel">
+            <button class="btn" type="submit" style="width:100%">Enregistrer</button>
+            <p class="msg hidden" id="set-msg" style="margin-top:12px"></p>
+          </div>
+          <div class="panel">
+            <h2>Un autre établissement ?</h2>
+            <p class="muted" style="margin-bottom:12px">Chaque établissement a son propre abonnement.</p>
+            <button class="btn alt" type="button" id="add-another">Ajouter un établissement</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div data-panel="billing" class="hidden"><div class="panel" id="billing"></div></div>
+  </section>
+</div>
+
+<dialog id="dlg">
+  <div class="dh"><h3>Modifier la réponse</h3><button class="btn ghost" style="color:#fff" type="button" data-close>Fermer</button></div>
+  <div class="db">
+    <p class="muted" id="dlg-review"></p>
+    <label class="field">Votre réponse<textarea id="dlg-text" rows="7"></textarea></label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="dlg-ok" type="button">Valider cette réponse</button><button class="btn alt" type="button" data-close>Annuler</button></div>
+  </div>
+</dialog>
+
+<script type="module">
+import { sb, $, $$, esc, stars, fmtDate, requireUser, logout, PLAN, daysLeft, showMsg, PRICE } from '/assets/supa.js';
+
+const ctx = await requireUser(); if (!ctx) throw 0;
+const { user, profile } = ctx;
+$('#who').textContent = user.email;
+$('#logout').onclick = logout;
+if (profile?.role === 'admin') {
+  $('#admin-link').classList.remove('hidden');
+  if (!sessionStorage.getItem('stay-client') && new URLSearchParams(location.search).get('vue') !== 'client') { location.href = '/admin.html'; throw 0; }
+}
+
+let restos = [], R = null, reviews = [];
+
+async function loadRestos() {
+  const q = sb.from('restaurants').select('*').order('created_at');
+  const { data } = profile?.role === 'admin' ? await q.eq('owner_id', user.id) : await q;
+  restos = data || [];
+}
+await loadRestos();
+$('#loading').classList.add('hidden');
+if (!restos.length) {
+  $('#no-resto').classList.remove('hidden');
+} else {
+  const pick = $('#resto-pick');
+  if (restos.length > 1) {
+    pick.classList.remove('hidden');
+    pick.innerHTML = restos.map((r) => `<option value="${r.id}">${esc(r.name)}</option>`).join('');
+    pick.onchange = () => open(pick.value);
+  }
+  $('#app').classList.remove('hidden');
+  await open(new URLSearchParams(location.search).get('r') || restos[0].id);
+}
+
+$('#add-first').addEventListener('submit', async (e) => {
+  e.preventDefault(); const d = Object.fromEntries(new FormData(e.target));
+  const { error } = await sb.rpc('add_my_restaurant', { p_name: d.name, p_city: d.city, p_maps: d.maps });
+  if (error) return showMsg($('#add-msg'), error.message, 'err');
+  location.reload();
+});
+$('#add-another').onclick = async () => {
+  const name = prompt("Nom du nouvel établissement ?"); if (!name) return;
+  const city = prompt('Ville ou arrondissement ?') || '';
+  const { data, error } = await sb.rpc('add_my_restaurant', { p_name: name, p_city: city, p_maps: '' });
+  if (error) return alert(error.message);
+  location.href = '/espace.html?r=' + data;
+};
+
+// Onglets
+$$('[role=tab]').forEach((b) => b.onclick = () => {
+  $$('[role=tab]').forEach((x) => x.setAttribute('aria-selected', x === b));
+  $$('[data-panel]').forEach((p) => p.classList.toggle('hidden', p.dataset.panel !== b.dataset.tab));
+});
+
+async function open(id) {
+  R = restos.find((r) => r.id === id) || restos[0];
+  $('#resto-pick').value = R.id;
+  $('#r-name').textContent = R.name;
+  const [label] = PLAN[R.plan_status] || ['—'];
+  const sub = R.plan_status === 'trial' ? `Essai gratuit · ${daysLeft(R.trial_ends_at)} jour(s) restant(s)` : label;
+  $('#r-sub').textContent = [R.city, sub].filter(Boolean).join(' · ');
+  renderBillingCta();
+  const [{ data: rv }, { data: rep }] = await Promise.all([
+    sb.from('reviews').select('*').eq('restaurant_id', R.id).order('review_date', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }),
+    sb.from('weekly_reports').select('*').eq('restaurant_id', R.id).order('week_start', { ascending: false }).limit(12)
+  ]);
+  reviews = rv || [];
+  renderReviews(); renderReports(rep || []); fillSettings(); renderBilling();
+}
+
+function renderReviews() {
+  const todo = reviews.filter((r) => r.status === 'a_valider');
+  const done = reviews.filter((r) => r.status === 'valide' || r.status === 'publie');
+  $('#k-todo').textContent = todo.length;
+  $('#k-done').textContent = done.length;
+  $('#todo-list').innerHTML = todo.length ? todo.map((r) => `
+    <article class="review" data-id="${r.id}">
+      <div class="meta"><span class="stars" aria-label="${r.stars} étoiles">${stars(r.stars)}</span><span>${esc(r.author || 'Client')}</span><span>${fmtDate(r.review_date || r.created_at)}</span></div>
+      <p class="said">${esc(r.text || '(avis sans texte)')}</p>
+      <div class="reply"><b>Réponse proposée</b>${esc(r.proposed_reply || '')}</div>
+      <div class="actions">
+        <button class="btn small" data-act="valider">OK, valider</button>
+        <button class="btn small alt" data-act="modifier">Modifier</button>
+        <button class="btn small ghost" data-act="ignorer">Ne pas répondre</button>
+      </div>
+    </article>`).join('')
+    : `<div class="empty">Aucun avis en attente.${reviews.length ? '' : ' Nous préparons vos premières réponses : vous serez prévenu dès qu\'elles sont prêtes.'}</div>`;
+  $('#hist').innerHTML = reviews.filter((r) => r.status !== 'a_valider').map((r) => `<tr>
+      <td class="num">${fmtDate(r.review_date || r.created_at)}</td><td class="stars">${stars(r.stars)}</td>
+      <td>${esc((r.text || '').slice(0, 140))}</td><td>${esc((r.final_reply || r.proposed_reply || '').slice(0, 160))}</td>
+      <td>${{ valide: '<span class="tag ok">Validée</span>', publie: '<span class="tag ok">Publiée</span>', ignore: '<span class="tag off">Ignorée</span>' }[r.status] || ''}</td></tr>`).join('')
+    || '<tr><td colspan="5" class="muted">Rien pour l\'instant.</td></tr>';
+}
+
+$('#todo-list').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const id = b.closest('[data-id]').dataset.id; const r = reviews.find((x) => x.id === id);
+  if (b.dataset.act === 'modifier') {
+    $('#dlg-review').textContent = `${stars(r.stars)} « ${r.text || ''} »`;
+    $('#dlg-text').value = r.proposed_reply || ''; $('#dlg').dataset.id = id; $('#dlg').showModal(); return;
+  }
+  b.disabled = true;
+  const { error } = await sb.rpc('decide_review', { p_review: id, p_action: b.dataset.act });
+  if (error) { b.disabled = false; return alert(error.message); }
+  r.status = b.dataset.act === 'valider' ? 'valide' : 'ignore'; renderReviews();
+});
+$$('[data-close]').forEach((b) => b.onclick = () => $('#dlg').close());
+$('#dlg-ok').onclick = async () => {
+  const id = $('#dlg').dataset.id; const text = $('#dlg-text').value.trim(); if (!text) return;
+  const { error } = await sb.rpc('decide_review', { p_review: id, p_action: 'valider', p_reply: text });
+  if (error) return alert(error.message);
+  const r = reviews.find((x) => x.id === id); r.status = 'valide'; r.final_reply = text; $('#dlg').close(); renderReviews();
+};
+
+function renderReports(list) {
+  const last = list[0];
+  $('#k-rating').textContent = last?.rating ? String(last.rating).replace('.', ',') : '—';
+  $('#k-rank').textContent = last?.local_rank ? last.local_rank + 'e' : '—';
+  if (last?.local_query) $('#k-rank-l').textContent = `sur « ${last.local_query} »`;
+  $('#reports').innerHTML = list.length ? list.map((w) => `
+    <div class="panel">
+      <h2>Semaine du ${fmtDate(w.week_start)}</h2>
+      <div class="kpis" style="margin-bottom:16px">
+        <div class="kpi"><div class="v num">${w.rating ? String(w.rating).replace('.', ',') : '—'}</div><div class="l">note Google</div></div>
+        <div class="kpi"><div class="v num">${w.reviews_week ?? '—'}</div><div class="l">avis reçus</div></div>
+        <div class="kpi"><div class="v num">${w.replied_week ?? '—'}</div><div class="l">avis répondus</div></div>
+        <div class="kpi"><div class="v num">${w.local_rank ? w.local_rank + 'e' : '—'}</div><div class="l">${esc(w.local_query || 'rang local')}</div></div>
+      </div>
+      ${Array.isArray(w.chatgpt) && w.chatgpt.length ? `<p style="font-weight:500;margin-bottom:6px">Cité par ChatGPT</p><table><tbody>${w.chatgpt.map((c) => `<tr><td>« ${esc(c.question)} »</td><td>${c.cite ? '<span class="tag ok">Cité</span>' : '<span class="tag off">Absent</span>'}</td></tr>`).join('')}</tbody></table>` : ''}
+      ${Array.isArray(w.actions) && w.actions.length ? `<p style="font-weight:500;margin:16px 0 6px">Vos actions de la semaine</p><ol style="margin:0;padding-left:20px">${w.actions.map((a) => `<li>${esc(a)}</li>`).join('')}</ol>` : ''}
+    </div>`).join('') : '<div class="empty">Votre premier rapport arrive dimanche matin.</div>';
+}
+
+function fillSettings() {
+  const f = $('#settings');
+  f.wa.checked = R.validate_whatsapp; f.sms.checked = R.validate_sms; f.mail.checked = R.validate_email;
+  f.phone.value = R.phone || ''; f.notify_email.value = R.notify_email || user.email;
+  f.tone.value = R.tone; f.signature.value = R.signature || ''; f.auto.checked = R.auto_publish_positive;
+  f.name.value = R.name; f.city.value = R.city || ''; f.maps.value = R.google_maps_url || '';
+}
+$('#settings').addEventListener('submit', async (e) => {
+  e.preventDefault(); const f = e.target;
+  const { error } = await sb.rpc('update_my_settings', {
+    p_restaurant: R.id, p_whatsapp: f.wa.checked, p_sms: f.sms.checked, p_email: f.mail.checked,
+    p_phone: f.phone.value, p_notify_email: f.notify_email.value, p_tone: f.tone.value, p_signature: f.signature.value,
+    p_auto: f.auto.checked, p_name: f.name.value, p_city: f.city.value, p_maps: f.maps.value });
+  if (error) return showMsg($('#set-msg'), error.message, 'err');
+  Object.assign(R, { validate_whatsapp: f.wa.checked, validate_sms: f.sms.checked, validate_email: f.mail.checked, phone: f.phone.value, notify_email: f.notify_email.value, tone: f.tone.value, signature: f.signature.value, auto_publish_positive: f.auto.checked, name: f.name.value, city: f.city.value, google_maps_url: f.maps.value });
+  $('#r-name').textContent = R.name;
+  showMsg($('#set-msg'), 'Réglages enregistrés.');
+});
+
+async function billingAction(kind) {
+  const { data: { session } } = await sb.auth.getSession();
+  const r = await fetch('/api/' + kind, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }, body: JSON.stringify({ restaurant_id: R.id }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) return alert(j.error || 'Indisponible pour le moment.');
+  location.href = j.url;
+}
+function renderBillingCta() {
+  const c = $('#billing-cta');
+  c.innerHTML = R.plan_status === 'active' || R.plan_status === 'past_due'
+    ? '<button class="btn alt" data-bill="portal">Gérer mon abonnement</button>'
+    : `<button class="btn" data-bill="checkout">S'abonner · ${PRICE} € HT/mois</button>`;
+}
+function renderBilling() {
+  const [label, kind] = PLAN[R.plan_status] || ['—', 'off'];
+  $('#billing').innerHTML = `
+    <h2>Abonnement</h2>
+    <p style="margin-bottom:16px"><span class="tag ${kind}">${label}</span></p>
+    <table><tbody>
+      <tr><td>Formule</td><td>Repère · un établissement · ${PRICE} € HT par mois, sans engagement</td></tr>
+      ${R.plan_status === 'trial' ? `<tr><td>Fin de l'essai</td><td class="num">${fmtDate(R.trial_ends_at)} (${daysLeft(R.trial_ends_at)} jour(s))</td></tr>` : ''}
+      ${R.current_period_end ? `<tr><td>Prochaine échéance</td><td class="num">${fmtDate(R.current_period_end)}</td></tr>` : ''}
+    </tbody></table>
+    <div style="margin-top:16px">${$('#billing-cta').innerHTML}</div>`;
+}
+document.addEventListener('click', (e) => { const b = e.target.closest('[data-bill]'); if (b) billingAction(b.dataset.bill); });
+</script>
+</body>
+</html>
